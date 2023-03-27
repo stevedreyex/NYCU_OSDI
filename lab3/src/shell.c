@@ -77,12 +77,10 @@ unsigned int parse_cmd(char *cmd, void *dtb){
         print_initramfs();
     }
     else if (str_comp(cmd, prog)){
-        dest = load_prog("usr.img");
-        uart_puts("\nProgram is loaded into address: ");
-        uart_hex(dest);
-        uart_puts("\n");
-        exec_prog(dest);
+	dest = load_prog("usr.img");
+	exec_prog(dest);
     }
+
     else uart_puts("shell: command not found\n");
     buf_clear(cmd);
 }

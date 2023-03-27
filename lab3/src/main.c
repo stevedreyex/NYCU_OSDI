@@ -23,10 +23,6 @@ void kernel_main(void *dtb)
 
 	enum stat s = read;
 	char *cmd[MAX_CMD];
-	// initrd_list();
-	dest = load_prog("usr.img");
-	// uart_puts("\nProgram is loaded into address: ");
-	exec_prog(dest);
 
 	// buf_clear(cmd);
 	while (1) {
