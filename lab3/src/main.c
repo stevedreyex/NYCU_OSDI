@@ -13,14 +13,36 @@ enum stat {
 
 void kernel_main(void *dtb)
 {
-	unsigned int *dest;
+
 	uart_init();
 	uart_puts("\n");
+	void *memory = (void *)0x120000;
+    char *mac = simple_malloc(&memory, 8);
+    uart_puts("8 bytes allocated, starts from: \n");
+    uart_hex((unsigned int)mac);
+    uart_puts("\n");
+    mac = simple_malloc(&memory, 34);
+    uart_puts("34 bytes  bytes allocated, starts from: \n");
+    uart_hex((unsigned int)mac);
+    uart_puts("\n");
+    mac = simple_malloc(&memory, 3);
+    uart_puts("3 bytes  bytes allocated, starts from: \n");
+    uart_hex((unsigned int)mac);
+    uart_puts("\n");
 
-	// Welcome();
+	uart_puts("initrd before callback:");
+	uart_hex(get_initramfs());
+	uart_puts("\nfind dtb from ");
+	uart_hex(dtb);
+	find_dtb(dtb, "linux,initrd-start", 18, &callback_initramfs);
+
+	uart_puts("\ninitrd after callback:");
+	uart_hex(get_initramfs());
+	uart_puts("\n");
+
+	Welcome();
 	uart_puts("\n");
 	uart_puts("Please type: \n");
-
 	enum stat s = read;
 	char *cmd[MAX_CMD];
 

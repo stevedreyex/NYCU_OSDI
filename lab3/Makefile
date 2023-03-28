@@ -18,7 +18,7 @@ clean :
 # 	$(LD) -r -b binary -o $(BUILD_DIR)/rd.o initramfs.cpio
 
 CPPFLAGS = -Iinclude -MMD -MP -static
-CFLAGS = -Wall -O3 -g
+CFLAGS = -Wall -O0 -g
 LDFLAGS = -nostdlib 
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
