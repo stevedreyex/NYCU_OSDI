@@ -76,7 +76,7 @@ from_el2_to_el1:
 
 exception_handler:
     save_all
-    // bl exception_entry
+    bl exception_entry
     load_all
     eret
 
