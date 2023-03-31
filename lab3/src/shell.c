@@ -1,5 +1,6 @@
 #include "mini_uart.h"
 #include "peripherals/mailbox.h"
+#include "utils.h"
 #include "cpio.h"
 #include "dtb.h"
 #define MAX_CMD 64
@@ -44,19 +45,21 @@ unsigned int parse_cmd(char *cmd, void *dtb){
     char *lshw = "lshw";
     char *initramfs = "initramfs";
     char *prog = "prog";
+	char *async = "async";
     unsigned int *dest;
     // DEBUG
     // cmd = "ls";
     if (str_comp(cmd, hello)) {uart_puts("Hello World!\n");}
     else if (str_comp(cmd, help)) {
-        uart_puts("help:\tprint this help menu\n");
-        uart_puts("hello:\tprint Hello World!\n");
+        uart_puts("help:\t\tprint this help menu\n");
+        uart_puts("hello:\t\tprint Hello World!\n");
         uart_puts("mailbox:\tMailbox address and size\n");
-        uart_puts("ls:\tshow the directory\n");
-        uart_puts("cat:\tshow file content\n");
-        uart_puts("lshw:\tshow hardware resuorces\n");
-        uart_puts("reboot:\treboot the device\n");
-        uart_puts("prog:\trun a user program");
+        uart_puts("ls:\t\tshow the directory\n");
+        uart_puts("cat:\\ttshow file content\n");
+        uart_puts("lshw:\t\tshow hardware resuorces\n");
+        uart_puts("reboot:\t\treboot the device\n");
+        uart_puts("prog:\t\trun a user program\n");
+		uart_puts("async_io:\tStarts a Read by Interrupt\n");
     }
     else if (str_comp(cmd, mbx)){
         mbox_call(MBOX_CH_PROP);
@@ -80,9 +83,22 @@ unsigned int parse_cmd(char *cmd, void *dtb){
 		dest = load_prog("usr.img");
 		exec_prog(dest);
     }
-
+    else if (str_comp(cmd, async)){
+		uart_puts("Asynchronous IO Starts, Please Type:");
+		uart_puts("\n$ ");
+		
+		// testing, if success interrupt, then this will halt
+		buf_clear(cmd, MAX_CMD);
+		enable_mini_uart_interrupt();
+		uart_async_getc(cmd, 16);
+		delay(2);
+		uart_async_send(cmd, 16);
+		delay(1);
+		return 1;
+	}
     else uart_puts("shell: command not found\n");
-    buf_clear(cmd);
+    buf_clear(cmd, MAX_CMD);
+	return 0;
 }
 
 int str_comp(char *x, char *y){
@@ -91,12 +107,6 @@ int str_comp(char *x, char *y){
             return 0;
 	}
     return 1;
-}
-
-void buf_clear(char *buf){
-    for(int i = 0; i < MAX_CMD; i++){
-        buf[i] = '\0';
-    }
 }
 
 void exception_entry() {

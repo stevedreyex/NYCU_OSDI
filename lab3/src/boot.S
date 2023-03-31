@@ -80,9 +80,9 @@ exception_handler:
     load_all
     eret
 
-timer_handler:
+sp_elx_irq_handler:
     save_all
-    bl core_timer_handler
+    bl sp_elx_handler
     load_all
 	eret
 
@@ -112,7 +112,7 @@ exception_vector_table:
 // Exception from the current EL while using SP_ELx
     b exception_handler
     .align 7
-    b timer_handler
+    b sp_elx_irq_handler
     .align 7
     b exception_handler
     .align 7
@@ -147,12 +147,3 @@ core_timer_enable:
     str w0, [x1] // unmask timer interrupt
 	ret
 
-core_timer_handler:
-    mrs x0, cntfrq_el0
-	mrs x1, cntpct_el0
-	stp lr, x0, [sp, #-16]!
-	bl print_core_timer
-	ldp lr, x0, [sp], #16
-	lsl x0, x0, #1
-	msr cntp_tval_el0, x0
-	ret

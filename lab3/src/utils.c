@@ -62,3 +62,23 @@ void* simple_malloc(void **now, int size) {
     *now = *(char **)now + size;
     return ret;
 }
+
+
+void buf_clear(char *buf, int BUF_SIZE){
+    for(int i = 0; i < BUF_SIZE; i++){
+        buf[i] = '\0';
+    }
+}
+
+int memcmp(void *s1, void *s2, int n)
+{
+    unsigned char *a=s1,*b=s2;
+    while(n-->0){ if(*a!=*b) { return *a-*b; } a++; b++; }
+    return 0;
+}
+
+void delay(int sec){
+	for (int i = 0; i < sec*1000000000 ; i++) {
+		asm("nop;");
+	}	
+}

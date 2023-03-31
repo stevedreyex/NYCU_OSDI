@@ -1,9 +1,16 @@
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
 #include "peripherals/mailbox.h"
+#include "utils.h"
+#include "exc.h"
+#define BUF_SIZE 64
 
 /* mailbox message buffer */
 volatile unsigned int  __attribute__((aligned(16))) mbox[36];
+static char rx_buf[BUF_SIZE];
+static char tx_buf[BUF_SIZE];
+int rx_index;
+int tx_index;
 
 /**
  * initialize UART
@@ -53,6 +60,66 @@ char uart_getc() {
     r=(char)(*AUX_MU_IO_REG);
     /* convert carriage return to newline */
     return r=='\r'?'\n':r;
+}
+
+/**
+ * Asynchronous IO send by TX
+ */
+void uart_async_send(char * str, int len) {
+	if (len > BUF_SIZE-1 || len < 0) {
+		uart_puts("Asynchronous send size invalid.\n");
+	} else {
+		for (int i = 0; i < len; i++){
+			tx_buf[i] = str[i];
+		}
+		tx_buf[len] = 0;
+		// Enable Tx
+		enable_tx();
+	}
+}
+
+/**
+ * Asynchronous IO receive by RX
+ */
+void uart_async_getc(char * str, int len) {
+	// disable Rx
+	if (len < 0 || len > BUF_SIZE){
+		uart_puts("Asynchronous get size invalid.\n");
+	} else {
+	
+		*AUX_MU_IER_REG &= 0x2;
+		for(int i = 0; i<len; i++){
+			str[i] = rx_buf[i];
+		}
+	}
+	buf_clear(rx_buf, BUF_SIZE);
+}
+
+/**
+ * Enable_tx, put content in tx buffer into AUX_MU_IO char by char
+ */
+void uart_transmit_handler(){
+	if (tx_buf[tx_index]==0){
+		tx_index = 0;
+		disable_tx();
+		return;
+	} else {	
+		*AUX_MU_IO_REG = tx_buf[tx_index++];
+		enable_tx();
+	}
+}
+
+/**
+ * Enable_rx, put content in AUX_MU_IO into rx buffer
+ */
+void uart_receive_handler(){
+	if (rx_index >= BUF_SIZE) {
+		rx_index = 0;
+		disable_rx();
+	} else{
+		rx_buf[rx_index] = (char)(*AUX_MU_IO_REG);
+		rx_index++;
+	}
 }
 
 /**
@@ -193,11 +260,4 @@ void mbox_call(unsigned char ch)
     uart_puts("ARM memory size: ");
     uart_hex(mbox[6]);
     uart_puts("\n");
-}
-
-int memcmp(void *s1, void *s2, int n)
-{
-    unsigned char *a=s1,*b=s2;
-    while(n-->0){ if(*a!=*b) { return *a-*b; } a++; b++; }
-    return 0;
 }

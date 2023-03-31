@@ -6,6 +6,7 @@
 #include "dtb.h"
 #define MAX_CMD 512
 
+
 enum stat {
 	read,
 	parse
@@ -13,7 +14,6 @@ enum stat {
 
 void kernel_main(void *dtb)
 {
-
 	uart_init();
 	uart_puts("\n");
 	void *memory = (void *)0x120000;
@@ -31,6 +31,7 @@ void kernel_main(void *dtb)
     uart_puts("\n");
 
 // Temporarily commented the dtb part: depercated now due to ELs
+//
 //	uart_puts("initrd before callback:");
 //	uart_hex(get_initramfs());
 //	uart_puts("\nfind dtb from ");

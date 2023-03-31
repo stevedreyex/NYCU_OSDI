@@ -3,6 +3,7 @@
 
 #define PBASE 0x3F000000
 // use phy addr 0x3f instead of bus addr 0x7e
+#define IRQs1		    ((volatile unsigned int*)(PBASE+0x0000b210))
 #define AUX_ENABLES     ((volatile unsigned int*)(PBASE+0x00215004))
 #define AUX_MU_CNTL_REG ((volatile unsigned int*)(PBASE+0x00215060))
 #define AUX_MU_IER_REG  ((volatile unsigned int*)(PBASE+0x00215044))

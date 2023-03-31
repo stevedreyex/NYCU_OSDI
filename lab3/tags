@@ -19,10 +19,11 @@ AUX_MU_MCR_REG	include/peripherals/mini_uart.h	/^#define AUX_MU_MCR_REG /;"	d
 AUX_MU_MSR_REG	include/peripherals/mini_uart.h	/^#define AUX_MU_MSR_REG /;"	d
 AUX_MU_SCRATCH_REG	include/peripherals/mini_uart.h	/^#define AUX_MU_SCRATCH_REG /;"	d
 AUX_MU_STAT_REG	include/peripherals/mini_uart.h	/^#define AUX_MU_STAT_REG /;"	d
+BUF_SIZE	src/mini_uart.c	/^#define BUF_SIZE /;"	d	file:
 BUILD_DIR	Makefile	/^BUILD_DIR = build$/;"	m
 CC	Makefile	/^CC = $(ARMGNU)-gcc$/;"	m
 CC	initramfs/Makefile	/^CC = $(ARMGNU)-gcc$/;"	m
-CFLAGS	Makefile	/^CFLAGS = -Wall -O3 -g$/;"	m
+CFLAGS	Makefile	/^CFLAGS = -Wall -O0 -g$/;"	m
 CFLAGS	initramfs/Makefile	/^CFLAGS = -Wall -O3$/;"	m
 CPIO	Makefile	/^CPIO = initramfs.cpio$/;"	m
 CPPFLAGS	Makefile	/^CPPFLAGS = -Iinclude -MMD -MP -static$/;"	m
@@ -47,6 +48,7 @@ GPFSEL1	include/peripherals/gpio.h	/^#define GPFSEL1 /;"	d
 GPPUD	include/peripherals/gpio.h	/^#define GPPUD /;"	d
 GPPUDCLK0	include/peripherals/gpio.h	/^#define GPPUDCLK0 /;"	d
 GPSET0	include/peripherals/gpio.h	/^#define GPSET0 /;"	d
+IRQs1	include/peripherals/mini_uart.h	/^#define IRQs1	/;"	d
 LD	Makefile	/^LD = $(ARMGNU)-ld$/;"	m
 LD	initramfs/Makefile	/^LD = $(ARMGNU)-ld$/;"	m
 LDFLAGS	Makefile	/^LDFLAGS = -nostdlib $/;"	m
@@ -100,6 +102,7 @@ VIDEOCORE_MBOX	include/peripherals/mailbox.h	/^#define VIDEOCORE_MBOX /;"	d
 Welcome	src/main.c	/^void Welcome(){$/;"	f
 _CPIO_H	include/cpio.h	/^#define _CPIO_H$/;"	d
 _DTB_H	include/dtb.h	/^#define _DTB_H$/;"	d
+_EXC_C	include/exc.h	/^#define _EXC_C$/;"	d
 _MAILBOX_H	include/peripherals/mailbox.h	/^#define _MAILBOX_H$/;"	d
 _MINI_UART_H	include/mini_uart.h	/^#define	_MINI_UART_H$/;"	d
 _P_GPIO_H	include/peripherals/gpio.h	/^#define	_P_GPIO_H$/;"	d
@@ -134,9 +137,9 @@ cancel_reset	src/mini_uart.c	/^void cancel_reset() {$/;"	f
 cat_list	src/cpio.c	/^void cat_list () {$/;"	f
 cmd_task	src/shell.c	/^enum cmd_task {$/;"	g	file:
 core_timer_enable	src/boot.S	/^core_timer_enable:$/;"	l
-core_timer_handler	src/boot.S	/^core_timer_handler:$/;"	l
 cpio_t	src/cpio.c	/^} cpio_t;$/;"	t	typeref:struct:__anon1	file:
 dtb_list	src/dtb.c	/^void dtb_list(void *dtb) {$/;"	f
+enable_mini_uart_interrupt	src/exc.c	/^void enable_mini_uart_interrupt(){$/;"	f
 exception_entry	src/shell.c	/^void exception_entry() {$/;"	f
 exception_handler	src/boot.S	/^exception_handler:$/;"	l
 exception_vector_table	src/boot.S	/^exception_vector_table:$/;"	l
@@ -173,6 +176,8 @@ print_initramfs	src/cpio.c	/^void print_initramfs(){$/;"	f
 read	src/main.c	/^	read,$/;"	e	enum:stat	file:
 reboot	src/shell.c	/^    reboot$/;"	e	enum:cmd_task	file:
 reset	src/mini_uart.c	/^void reset(int tick) {                 \/\/ reboot after watchdog timer expire$/;"	f
+rx_buf	src/mini_uart.c	/^static char rx_buf[BUF_SIZE];$/;"	v	file:
+rx_index	src/mini_uart.c	/^int rx_index;$/;"	v
 set	src/mini_uart.c	/^void set(long addr, unsigned int value) {$/;"	f
 set_exception_vector_table	src/boot.S	/^set_exception_vector_table:$/;"	l
 shell_input	src/shell.c	/^void shell_input(char *cmd){$/;"	f
@@ -180,10 +185,15 @@ simple_malloc	src/utils.c	/^void* simple_malloc(void **now, int size) {$/;"	f
 size	src/dtb.c	/^    uint64_t size;$/;"	m	struct:__anon3	file:
 size_dt_strings	src/dtb.c	/^    uint32_t size_dt_strings; $/;"	m	struct:__anon2	file:
 size_dt_struct	src/dtb.c	/^    uint32_t size_dt_struct;$/;"	m	struct:__anon2	file:
+sp_elx_handler	src/exc.c	/^void sp_elx_handler(){$/;"	f
+sp_elx_irq_handler	src/boot.S	/^sp_elx_irq_handler:$/;"	l
 stat	src/main.c	/^enum stat {$/;"	g	file:
 str_comp	src/shell.c	/^int str_comp(char *x, char *y){$/;"	f
-timer_handler	src/boot.S	/^timer_handler:$/;"	l
 totalsize	src/dtb.c	/^    uint32_t totalsize; $/;"	m	struct:__anon2	file:
+tx_buf	src/mini_uart.c	/^static char tx_buf[BUF_SIZE];$/;"	v	file:
+tx_index	src/mini_uart.c	/^int tx_index;$/;"	v
+uart_async_getc	src/mini_uart.c	/^char uart_async_getc() {$/;"	f
+uart_async_send	src/mini_uart.c	/^void uart_async_send(char c) {$/;"	f
 uart_getc	src/mini_uart.c	/^char uart_getc() {$/;"	f
 uart_hex	src/mini_uart.c	/^void uart_hex(unsigned int d) {$/;"	f
 uart_hexdump	src/mini_uart.c	/^void uart_hexdump(unsigned int d) {$/;"	f
@@ -192,6 +202,8 @@ uart_init	src/mini_uart.c	/^void uart_init ( void ) {$/;"	f
 uart_int	src/utils.c	/^void uart_int(int i){$/;"	f
 uart_puts	src/mini_uart.c	/^void uart_puts(char *s) {$/;"	f
 uart_puts_l	src/mini_uart.c	/^void uart_puts_l(char *s, int l) {$/;"	f
+uart_receive_handler	src/mini_uart.c	/^void uart_receive_handler(){$/;"	f
 uart_send	src/mini_uart.c	/^void uart_send(char c) {$/;"	f
+uart_transmit_handler	src/mini_uart.c	/^void uart_transmit_handler(){$/;"	f
 uart_ulong	src/mini_uart.c	/^void uart_ulong(unsigned long i) {$/;"	f
 version	src/dtb.c	/^    uint32_t version;$/;"	m	struct:__anon2	file:
