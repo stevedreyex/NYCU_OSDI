@@ -3,7 +3,7 @@
 #include "dtb.h"
 #include <stdint.h>
 
-static void *mem = 0x8000000;
+static void *mem = 0x0;
 
 typedef struct {
     char	   c_magic[6];

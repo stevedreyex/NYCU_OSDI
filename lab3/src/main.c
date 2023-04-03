@@ -32,15 +32,15 @@ void kernel_main(void *dtb)
 
 // Temporarily commented the dtb part: depercated now due to ELs
 //
-//	uart_puts("initrd before callback:");
-//	uart_hex(get_initramfs());
-//	uart_puts("\nfind dtb from ");
-//	uart_hex(dtb);
-//	find_dtb(dtb, "linux,initrd-start", 18, &callback_initramfs);
-//
-//	uart_puts("\ninitrd after callback:");
-//	uart_hex(get_initramfs());
-//	uart_puts("\n");
+	uart_puts("initrd before callback:");
+	uart_hex(get_initramfs());
+	uart_puts("\nfind dtb from ");
+	uart_hex(dtb);
+	find_dtb(dtb, "linux,initrd-start", 18, &callback_initramfs);
+
+	uart_puts("\ninitrd after callback:");
+	uart_hex(get_initramfs());
+	uart_puts("\n");
 
 	Welcome();
 	uart_puts("\n");

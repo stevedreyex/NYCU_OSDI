@@ -3,6 +3,7 @@
 .global _start
 
 _start:
+	mov x25, x0
     bl from_el2_to_el1
     bl set_exception_vector_table
 	bl core_timer_enable
@@ -19,7 +20,8 @@ _start:
     cbnz    w2, 1b
 
 2:  // jump to C code, should not return
-    bl      kernel_main
+    mov x0, x25
+	bl      kernel_main
     // for failsafe, halt this core too
 3:  wfe
     b       3b
