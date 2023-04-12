@@ -169,19 +169,24 @@ void * obj_allocate(int token){
 
 	// This pool object didn't have a page yet
 	if (obj_alloc->curr == NULL) {
+		uart_puts("Current page of the Object Allocator is NULL, find a page.\n");
 		page_t * page;
 		// Partial is exist then use the partial one
+
 		if (!list_empty(&obj_alloc->partial)){
+			uart_puts("Find Partial from existed page\n");
 			page = (page_t *) obj_alloc->partial.next;
 			list_del(&page->list);
 		} 
 		// Use a empty page
 		else if (!list_empty(&obj_alloc->empty)){
+			uart_puts("Find Empty from existed page\n");
 			page = (page_t *) obj_alloc->empty.next;
 			list_del(&page->list);
 		} 
 		// Get a new page from the buddy system
 		else {
+			uart_puts("No existed Partial and Empty page can use, alloc from buddy.\n");
 			page = buddy_alloc(0);
 			obj_page_init(page);
 			// Is a page with Dynamic allocation, shall store this object
@@ -190,16 +195,26 @@ void * obj_allocate(int token){
 		}
 
 		obj_alloc->curr = page;
+	} else {
+		uart_puts("Current page of the Object Allocator (Free list) Existed!!!\n");
 	}
 
 	struct list_head * obj_freelist = obj_alloc->curr->free;
 	// obj_page_init was first called, which in the previous case 3
 	if(obj_freelist != NULL){
+		uart_puts("Free of Current Page of Object existed, use the free space at: ");
 		alloc_addr = obj_freelist;
-		obj_freelist = obj_freelist->next;
+		uart_hex(alloc_addr);
+		uart_puts("\n");
+		obj_alloc->curr->free = obj_freelist->next;
+		uart_hex(obj_freelist);
+		uart_puts(": The object Freelist");
 	} else {
+		uart_puts("This page is allocated at the first time, use the start address of page: ");
 		// page base address add (num of objs) * (size per object)
 		alloc_addr = (void *) obj_alloc->curr->phy_addr + obj_alloc->curr->obj_used * obj_alloc->objsize;
+		uart_hex(alloc_addr);
+		uart_puts("\n");
 	}
 	obj_alloc->obj_used += 1;
 	obj_alloc->curr->obj_used += 1;
@@ -222,23 +237,31 @@ void obj_free(void * obj_addr){
 	int obj_pfn = PHY_ADDR_TO_PFN(obj_addr);
 	page_t * page = &pageframe[obj_pfn];
 	object_allocator_t * obj_alloc = page->object_alloc;
-
+	uart_puts("Delete item on pfn: ");
+	uart_int(obj_pfn);
+	uart_puts("\n");
+	
 	// Page's list shall always points to the first free object
 	struct list_head * temp = page->free;
 	page->free = (struct list_head *) obj_addr;
-	page->free->next =  temp;
+	page->free->next = temp;
 
 	obj_alloc->obj_used -= 1;
 	page->obj_used -= 1;
+	uart_puts("Object deleted, at: ");
+	uart_hex(obj_addr);
+	uart_puts("\n");
 
 	// Full page may reduce to partial
 	if(obj_alloc->obj_per_page-1 == page->obj_used){
+		uart_puts("This page can reduce to partial page!\n");
 		list_del(&page->list);
 		list_add_tail(&page->list, &obj_alloc->partial);
 	}
 
 	// Partial page may reduce to empty
 	if(page->obj_used == 0 && obj_alloc->curr != page){
+		uart_puts("This page can reduce to empty page!\n");
 		list_del(&page->list);
 		list_add_tail(&page->list, &obj_alloc->empty);
 	}
