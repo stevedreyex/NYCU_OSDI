@@ -20,6 +20,8 @@
 #define MIN_DYN_SIZE 8
 #define MAX_DYN_SIZE 2048
 
+#define MAX_MEM_RESERVED 16
+
 #define PFN_MASK 0x0000FFFFFFFFF000
 #define PHY_ADDR_TO_PFN(addr) (((((unsigned long)(addr)) - BUDDY_LO) & PFN_MASK) >> 12)
 
@@ -58,6 +60,13 @@ typedef struct object_allocator{
 	int page_used;
 } object_allocator_t;
 
+typedef struct reserved {
+	// 1 for True, 0 for False
+	int is_reserved;
+	int start;
+	int offset;
+} reserved_t;
+
 void page_init();
 void free_area_init();
 void push2free(page_t *page, free_area_t *free_area, int order);
@@ -73,4 +82,7 @@ void obj_free(void * obj_addr);
 void dyn_init();
 void obj_free(void * obj_addr);
 
+void mem_reserved_init();
+void memory_reserve(unsigned start, unsigned end);
+void dump_mem_reserved();
 #endif

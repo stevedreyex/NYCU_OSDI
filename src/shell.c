@@ -46,6 +46,8 @@ unsigned int parse_cmd(char *cmd, void *dtb){
     char *initramfs = "initramfs";
     char *prog = "prog";
 	char *async = "async";
+	char *buddy = "buddy";
+	char *dyn = "dyn";
     unsigned int *dest;
     // DEBUG
     // cmd = "ls";
@@ -60,6 +62,8 @@ unsigned int parse_cmd(char *cmd, void *dtb){
         uart_puts("reboot:\t\treboot the device\n");
         uart_puts("prog:\t\trun a user program\n");
 		uart_puts("async_io:\tStarts a Read by Interrupt\n");
+		uart_puts("buddy: Demo Buddy System[1, 2, 1, 1, 3]\n");
+		uart_puts("dyn: Demo Dynamic Allocator (size: 2000)\n");
     }
     else if (str_comp(cmd, mbx)){
         mbox_call(MBOX_CH_PROP);
@@ -94,6 +98,12 @@ unsigned int parse_cmd(char *cmd, void *dtb){
 		delay(1);
 		uart_async_send(cmd, 16);
 		return 1;
+	}
+	else if (str_comp(cmd, buddy)){
+		buddy_init();
+	}
+	else if (str_comp(cmd, dyn)){
+		dyn_init();
 	}
     else uart_puts("shell: command not found\n");
     buf_clear(cmd, MAX_CMD);
