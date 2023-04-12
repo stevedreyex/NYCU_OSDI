@@ -42,7 +42,12 @@ void kernel_main(void *dtb)
 	uart_hex(get_initramfs());
 	uart_puts("\n");
 	
-	buddy_init();
+	
+	page_init();
+	free_area_init();
+	// buddy_init();
+	
+	dyn_init();
 
 	Welcome();
 	uart_puts("\n");
