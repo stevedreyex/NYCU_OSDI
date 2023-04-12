@@ -47,7 +47,7 @@ void kernel_main(void *dtb)
 	free_area_init();
 	// buddy_init();
 	
-	dyn_init();
+	// dyn_init();
 
 	Welcome();
 	uart_puts("\n");
