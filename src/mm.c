@@ -5,6 +5,7 @@
 page_t pageframe[PAGE_FRAME_NUM];
 free_area_t free_area[MAX_ORDER+1];
 object_allocator_t obj_alloc_pool[MAX_DYNAMIC_ALLOC_NUM];
+reserved_t mem_reserved[MAX_MEM_RESERVED];
 
 void page_init(){
 	for(int i = 0; i < PAGE_FRAME_NUM; i++){
@@ -366,3 +367,37 @@ void dump_dyn_area(object_allocator_t * obj_alloc){
 	uart_puts("\n-----------END-----------\n");
 }
 
+// Below for reserved memory
+
+void mem_reserved_init(){
+	for(int i = 0; i < MAX_MEM_RESERVED; i++){
+		mem_reserved[i].is_reserved = 0;
+		mem_reserved[i].start = 0x0;
+		mem_reserved[i].offset = 0x0;
+	}
+}
+
+void memory_reserve(unsigned start, unsigned end){
+	int i = 0;
+	for(i; i < MAX_MEM_RESERVED; i++){
+		if(mem_reserved[i].is_reserved == 0) break;
+	}
+
+	mem_reserved[i].is_reserved = 1;
+	mem_reserved[i].start = start;
+	mem_reserved[i].offset = (end - start);
+}
+
+void dump_mem_reserved(){
+	for(int i = 0; i < MAX_MEM_RESERVED; i++){
+		uart_puts("Index: ");
+		uart_int(i);
+		uart_puts("\tis_reserved: ");
+		uart_int(mem_reserved[i].is_reserved);
+		uart_puts("\tStart: ");
+		uart_hex(mem_reserved[i].start);
+		uart_puts("\tOffset: ");
+		uart_hex(mem_reserved[i].offset);
+		uart_puts("\n");
+	}
+}

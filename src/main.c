@@ -42,6 +42,14 @@ void kernel_main(void *dtb)
 	uart_hex(get_initramfs());
 	uart_puts("\n");
 	
+	mem_reserved_init();
+	memory_reserve(0x80000, 0x90000);
+	memory_reserve(0x8000000, 0x8001000);
+	memory_reserve(dtb, dtb+0x15000);
+	memory_reserve(0x0, 0x1000);
+	memory_reserve(0x120000, 0x121000);
+
+	dump_mem_reserved();
 	
 	page_init();
 	free_area_init();
