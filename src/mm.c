@@ -386,12 +386,13 @@ void mem_reserved_init(){
 
 void put_memory_reserve(unsigned start, unsigned end){
 	int i = 0;
+	
 	for(i; i < MAX_MEM_RESERVED; i++){
 		if(mem_reserved[i].is_reserved == 0) break;
 	}
 
 	mem_reserved[i].is_reserved = 1;
-	mem_reserved[i].start = start;
+	mem_reserved[i].start = start - (start % 0x40000);
 	mem_reserved[i].offset = (end - start);
 }
 

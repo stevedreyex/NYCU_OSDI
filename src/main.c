@@ -49,7 +49,7 @@ void kernel_main(void *dtb)
 	// For Initramfs.cpio
 	put_memory_reserve(0x8000000, 0x8001000);
 	// For DTB
-	put_memory_reserve(dtb, dtb+0x15000);
+	put_memory_reserve(dtb, dtb+0x18000);
 	// For Spin Table of Multicore boot
 	put_memory_reserve(0x0, 0x2000);
 

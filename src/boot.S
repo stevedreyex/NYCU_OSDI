@@ -4,9 +4,9 @@
 
 _start:
 	mov x25, x0
-//    bl from_el2_to_el1
+    bl from_el2_to_el1
     bl set_exception_vector_table
-//	bl core_timer_enable
+	bl core_timer_enable
     // set top of stack just before our code (stack grows to a lower address per AAPCS64)
     adr     x1, _start
     mov     sp, x1
