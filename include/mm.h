@@ -5,13 +5,14 @@
 #include "types.h"
 
 // refrence: https://www.kernel.org/doc/gorman/html/understand/understand009.html
-#define PAGE_SIZE (1 << 12) //4096
-#define MAX_ORDER 5 // Levels of Order
-#define TOTAL_MAX_SIZE (1 << MAX_ORDER) // Total size of buddy system
+#define PAGE_SHIFT_BIT 12
+#define PAGE_SIZE (1 << PAGE_SHIFT_BIT) //4096
+#define MAX_ORDER 6 // Levels of Order , 2^6 is 64 pages = 0x40000 per Freelist object
+#define MAX_ORDER_SIZE (1 << MAX_ORDER) // Total size of buddy system
 
-#define PAGE_FRAME_NUM 32
-#define BUDDY_LO 0x10000000
-#define BUDDY_HI (BUDDY_LO + MAX_SIZE * PAGE_SIZE)
+#define PAGE_FRAME_NUM (BUDDY_HI - BUDDY_LO)/(PAGE_SIZE)
+#define BUDDY_LO 0x00000000
+#define BUDDY_HI 0x3C000000
 
 #define FIND_BUDDY_PFN(pfn, order) ((pfn) ^ (1<<(order)))
 #define FIND_LBUDDY_PFN(pfn, order)((pfn) & (~(1<<(order))))
@@ -82,7 +83,12 @@ void obj_free(void * obj_addr);
 void dyn_init();
 void obj_free(void * obj_addr);
 
+void dump_free_area();
+void dump_dyn_area(object_allocator_t * obj_alloc);
+
 void mem_reserved_init();
-void memory_reserve(unsigned start, unsigned end);
+void put_memory_reserve(unsigned start, unsigned end);
+struct page * reserve_memory_block(reserved_t * reserved);
+void apply_memory_reserve();
 void dump_mem_reserved();
 #endif

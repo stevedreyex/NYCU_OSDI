@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "peripherals/mailbox.h"
 #include "dtb.h"
+#include "mm.h"
 #define MAX_CMD 512
 
 
@@ -16,7 +17,7 @@ void kernel_main(void *dtb)
 {
 	uart_init();
 	uart_puts("\n");
-	void *memory = (void *)0x120000;
+	void *memory = (void *)0x100000;
     char *mac = simple_malloc(&memory, 8);
     uart_puts("8 bytes allocated, starts from: \n");
     uart_hex((unsigned int)mac);
@@ -43,16 +44,21 @@ void kernel_main(void *dtb)
 	uart_puts("\n");
 	
 	mem_reserved_init();
-	memory_reserve(0x80000, 0x90000);
-	memory_reserve(0x8000000, 0x8001000);
-	memory_reserve(dtb, dtb+0x15000);
-	memory_reserve(0x0, 0x1000);
-	memory_reserve(0x120000, 0x121000);
+	// For Heap and Code Section
+	put_memory_reserve(0x80000, 0xA0000);
+	// For Initramfs.cpio
+	put_memory_reserve(0x8000000, 0x8001000);
+	// For DTB
+	put_memory_reserve(dtb, dtb+0x15000);
+	// For Spin Table of Multicore boot
+	put_memory_reserve(0x0, 0x2000);
 
 	dump_mem_reserved();
 	
 	page_init();
 	free_area_init();
+	dump_free_area();
+	apply_memory_reserve();
 	// buddy_init();
 	
 	// dyn_init();

@@ -8,6 +8,10 @@ object_allocator_t obj_alloc_pool[MAX_DYNAMIC_ALLOC_NUM];
 reserved_t mem_reserved[MAX_MEM_RESERVED];
 
 void page_init(){
+	uart_puts("\nNumbers of Page Frame: 0x");
+	uart_hex(PAGE_FRAME_NUM);
+	uart_puts("\n");
+
 	for(int i = 0; i < PAGE_FRAME_NUM; i++){
 		// -1 means unallocated
 		pageframe[i].order = -1;
@@ -24,7 +28,9 @@ void free_area_init(){
 	}
 
 	// Add the top order to the freelist and wait for alloc. Pages will split when alloc is needed.
-	push2free(&pageframe[0], &free_area[MAX_ORDER], MAX_ORDER);
+	for(int i = 0; i<PAGE_FRAME_NUM; i+=MAX_ORDER_SIZE){
+		push2free(&pageframe[i], &free_area[MAX_ORDER], MAX_ORDER);
+	}
 }
 
 /**
@@ -305,8 +311,9 @@ void dyn_init(){
 // Below are the area to dump imformations
 
 void dump_free_area(){
-	uart_puts("\n----------BUDDY----------");
-	for(int i = MAX_ORDER; i >= 0; i--){
+	uart_puts("\n----------BUDDY----------\n");
+	uart_puts("Order 6: (Now Hide)");
+	for(int i = MAX_ORDER-1; i >= 0; i--){
 		uart_puts("\nOrder:");
 		uart_int(i);
 		struct list_head *pos;
@@ -377,7 +384,7 @@ void mem_reserved_init(){
 	}
 }
 
-void memory_reserve(unsigned start, unsigned end){
+void put_memory_reserve(unsigned start, unsigned end){
 	int i = 0;
 	for(i; i < MAX_MEM_RESERVED; i++){
 		if(mem_reserved[i].is_reserved == 0) break;
@@ -386,6 +393,56 @@ void memory_reserve(unsigned start, unsigned end){
 	mem_reserved[i].is_reserved = 1;
 	mem_reserved[i].start = start;
 	mem_reserved[i].offset = (end - start);
+}
+
+struct page * reserve_memory_block(reserved_t * reserved){
+	int order = round_up_to_order((reserved->offset) >> PAGE_SHIFT_BIT);
+	uart_puts("A reserve a page with order ");
+	uart_int(order);
+	struct list_head * curr = free_area[MAX_ORDER].free_list.next;
+	while (((page_t *)curr)->phy_addr != reserved->start) {
+		curr = curr->next;
+	}
+	uart_puts(" at start point: ");
+	uart_hex(((page_t *)curr)->phy_addr);
+	uart_puts("\n");
+
+	struct page * target = (page_t *)curr;
+
+	for(int j = MAX_ORDER; j > order; j--){
+		int downward_buddy_pfn = FIND_BUDDY_PFN(target->pfn, j-1);
+		uart_puts("\nDownward buddy pfn: ");
+		uart_int(downward_buddy_pfn);
+		struct page * downward_buddy = &pageframe[downward_buddy_pfn];
+		push2free(downward_buddy, &free_area[j-1], j-1);
+		uart_puts("\nSplitted into 2 chunks in order: ");
+		uart_int(j-1);
+	}
+
+	uart_puts("\nFinally puts chunk in memory:");
+	uart_hex(target->phy_addr);
+	dump_free_area();
+	return target;
+}
+
+void apply_memory_reserve(){
+	for(int i = 0; i < MAX_MEM_RESERVED; i++){
+		if(mem_reserved[i].is_reserved == 0) break;
+		else reserve_memory_block(&mem_reserved[i]);	
+	}
+}
+
+int round_up_to_order(int page_num){
+	int ret = 0;
+	page_num = page_num >> 1; 
+	while(1){
+		if(page_num==0) break;
+		else { 
+			page_num = page_num >> 1;
+			ret += 1;
+		}
+	}
+	return ret;
 }
 
 void dump_mem_reserved(){
