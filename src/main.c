@@ -17,20 +17,6 @@ void kernel_main(void *dtb)
 {
 	uart_init();
 	uart_puts("\n");
-	void *memory = (void *)0x100000;
-    char *mac = simple_malloc(&memory, 8);
-    uart_puts("8 bytes allocated, starts from: \n");
-    uart_hex((unsigned int)mac);
-    uart_puts("\n");
-    mac = simple_malloc(&memory, 34);
-    uart_puts("34 bytes  bytes allocated, starts from: \n");
-    uart_hex((unsigned int)mac);
-    uart_puts("\n");
-    mac = simple_malloc(&memory, 3);
-    uart_puts("3 bytes  bytes allocated, starts from: \n");
-    uart_hex((unsigned int)mac);
-    uart_puts("\n");
-
 // Temporarily commented the dtb part: depercated now due to ELs
 //
 	uart_puts("initrd before callback:");

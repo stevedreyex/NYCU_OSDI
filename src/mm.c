@@ -459,3 +459,29 @@ void dump_mem_reserved(){
 		uart_puts("\n");
 	}
 }
+
+// Below for simple malloc from lab2: very simple and useless
+// With fragmentation, not possible to free
+
+void simple_malloc_demo(){
+	void *memory = (void *)0x98000;
+	uart_puts("A simple heap starts at 0x98000, which follows the text section.");
+    char *mac = simple_malloc(&memory, 8);
+    uart_puts("8 bytes allocated, starts from: \n");
+    uart_hex((unsigned int)mac);
+    uart_puts("\n");
+    mac = simple_malloc(&memory, 34);
+    uart_puts("34 bytes  bytes allocated, starts from: \n");
+    uart_hex((unsigned int)mac);
+    uart_puts("\n");
+    mac = simple_malloc(&memory, 3);
+    uart_puts("3 bytes  bytes allocated, starts from: \n");
+    uart_hex((unsigned int)mac);
+    uart_puts("\n");
+}
+
+void* simple_malloc(void **now, int size) {
+    void *ret = *now;
+    *now = *(char **)now + size;
+    return ret;
+}

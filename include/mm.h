@@ -91,4 +91,7 @@ void put_memory_reserve(unsigned start, unsigned end);
 struct page * reserve_memory_block(reserved_t * reserved);
 void apply_memory_reserve();
 void dump_mem_reserved();
+
+void simple_malloc_demo();
+void* simple_malloc(void **now, int size);
 #endif

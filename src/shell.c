@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "cpio.h"
 #include "dtb.h"
+#include "mm.h"
 #define MAX_CMD 64
 
 enum cmd_task {
@@ -48,7 +49,8 @@ unsigned int parse_cmd(char *cmd, void *dtb){
 	char *async = "async";
 	char *buddy = "buddy";
 	char *dyn = "dyn";
-    unsigned int *dest;
+    char *simp_malloc = "simp_malloc";
+	unsigned int *dest;
     // DEBUG
     // cmd = "ls";
     if (str_comp(cmd, hello)) {uart_puts("Hello World!\n");}
@@ -64,6 +66,7 @@ unsigned int parse_cmd(char *cmd, void *dtb){
 		uart_puts("async_io:\tStarts a Read by Interrupt\n");
 		uart_puts("buddy: Demo Buddy System[1, 2, 1, 1, 3]\n");
 		uart_puts("dyn: Demo Dynamic Allocator (size: 2000)\n");
+		uart_puts("simp_malloc: simple malloc on heap\n");
     }
     else if (str_comp(cmd, mbx)){
         mbox_call(MBOX_CH_PROP);
@@ -104,6 +107,9 @@ unsigned int parse_cmd(char *cmd, void *dtb){
 	}
 	else if (str_comp(cmd, dyn)){
 		dyn_init();
+	}
+	else if (str_comp(cmd, simp_malloc)){
+		simple_malloc_demo();
 	}
     else uart_puts("shell: command not found\n");
     buf_clear(cmd, MAX_CMD);

@@ -57,13 +57,6 @@ int atoi(char * c){
 
 // void uart_printf(char *s, )
 
-void* simple_malloc(void **now, int size) {
-    void *ret = *now;
-    *now = *(char **)now + size;
-    return ret;
-}
-
-
 void buf_clear(char *buf, int BUF_SIZE){
     for(int i = 0; i < BUF_SIZE; i++){
         buf[i] = '\0';
