@@ -18,7 +18,7 @@ clean :
 # 	$(LD) -r -b binary -o $(BUILD_DIR)/rd.o initramfs.cpio
 
 CPPFLAGS = -Iinclude -MMD -MP -static
-CFLAGS = -Wall -O0 -g
+CFLAGS = -Wall -O0 -mgeneral-regs-only -fno-lto -fno-builtin -g
 LDFLAGS = -nostdlib 
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
@@ -40,7 +40,7 @@ kernel8.img : $(SRC_DIR)/linker.ld  $(OBJ_FILES)
 	$(OBJCOPY) -O binary $(BUILD_DIR)/kernel8.elf kernel8.img
 
 run: kernel8.img
-	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio ${ENV_HDR} -kernel $<
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio ${ENV_HDR} -kernel $< -d int
 
 asm: kernel8.img
 	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio ${ENV_HDR} -d in_asm -d int -kernel $<
