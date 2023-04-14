@@ -19,6 +19,8 @@ void kernel_main(void *dtb)
 	uart_puts("\n");
 // Temporarily commented the dtb part: depercated now due to ELs
 //
+	set_dtb(dtb);
+
 	uart_puts("initrd before callback:");
 	uart_hex(get_initramfs());
 	uart_puts("\nfind dtb from ");
@@ -65,7 +67,9 @@ void kernel_main(void *dtb)
 			s = parse;
 		} else {
 			// TO test inst,  modify this line
-			parse_cmd(cmd, dtb);
+			// parse_cmd(cmd, dtb);
+			parse_cmd(cmd);
+			
 			// parse_cmd("ls");
 			s = read;
 		}

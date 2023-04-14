@@ -58,7 +58,13 @@ uint64_t bswap_64(uint64_t num) {
     return swapped;
 }
 
-void dtb_list(void *dtb) {
+void *dtb;
+
+void set_dtb(void * addr){
+	dtb = addr;
+}
+
+void dtb_list() {
     char *buf = (char *)dtb;
     fdt_header *header = (fdt_header*)dtb;
     uart_puts("\n");
