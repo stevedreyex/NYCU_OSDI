@@ -9,5 +9,6 @@ uint64_t bswap_64(uint64_t num);
 void set_dtb(void * addr);
 void dtb_list();
 int find_dtb(void *dtb, const char* name, int name_len, int (*func)(void*, int));
+uint32_t get_dtb_size();
 
 #endif

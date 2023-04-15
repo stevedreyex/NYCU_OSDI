@@ -108,6 +108,22 @@ int get_initramfs(){
     return mem;
 }
 
+int get_initramfs_size(){
+    char *buf = (char *)mem;
+    // if it's a cpio archive. Cpio also has a trailer entry
+    while(!memcmp(buf,"070701",6)) {
+        cpio_t *header = (cpio_t*)buf;
+        int ns=hex2bin(header->c_namesize,8);
+        int fs=hex2bin(header->c_filesize,8);
+        // jump to the next file
+        int off = ((ns+fs+sizeof(cpio_t))%4);
+        if (off!=0) 
+            off = 4-off;
+        buf+=(sizeof(cpio_t)+ns+fs+off);
+    }
+	return ((void *)buf - mem);
+}
+
 void print_initramfs(){
     uart_hex(mem);
 }

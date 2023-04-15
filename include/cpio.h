@@ -6,6 +6,7 @@ void cat_list ();
 void callback_initramfs(void * addr);
 int get_initramfs();
 unsigned int * load_prog (void * prog);
+int get_initramfs_size();
 void print_initramfs();
 
 #endif

@@ -397,7 +397,7 @@ void put_memory_reserve(unsigned start, unsigned end){
 }
 
 struct page * reserve_memory_block(reserved_t * reserved){
-	int order = round_up_to_order((reserved->offset) >> PAGE_SHIFT_BIT);
+	int order = round_up_to_order(reserved->offset);
 	uart_puts("A reserve a page with order ");
 	uart_int(order);
 	struct list_head * curr = free_area[MAX_ORDER].free_list.next;
@@ -435,7 +435,8 @@ void apply_memory_reserve(){
 
 int round_up_to_order(int page_num){
 	int ret = 0;
-	page_num = page_num >> 1; 
+	page_num = ((page_num >> PAGE_SHIFT_BIT)-1);
+	if (page_num < 0) return 0;;
 	while(1){
 		if(page_num==0) break;
 		else { 

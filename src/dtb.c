@@ -238,3 +238,11 @@ int find_dtb(void *dtb, const char* name, int name_len, void (*func)(void*)){
         return;
     }
 }
+
+uint32_t get_dtb_size() {
+    char *buf = (char *)dtb;
+    fdt_header *header = (fdt_header*)dtb;
+    if (bswap_32(header->magic)!=0xd00dfeed)
+		return 0;    
+	return bswap_32(header->totalsize);
+}

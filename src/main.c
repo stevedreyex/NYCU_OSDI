@@ -5,6 +5,7 @@
 #include "peripherals/mailbox.h"
 #include "dtb.h"
 #include "mm.h"
+#include <cpio.h>
 #define MAX_CMD 512
 
 
@@ -35,9 +36,9 @@ void kernel_main(void *dtb)
 	// For Heap and Code Section
 	put_memory_reserve(0x80000, 0xA0000);
 	// For Initramfs.cpio
-	put_memory_reserve(0x8000000, 0x8001000);
+	put_memory_reserve(get_initramfs(), get_initramfs() + get_initramfs_size());
 	// For DTB
-	put_memory_reserve(dtb, dtb+0x18000);
+	put_memory_reserve(dtb, dtb + get_dtb_size());
 	// For Spin Table of Multicore boot
 	put_memory_reserve(0x0, 0x2000);
 
