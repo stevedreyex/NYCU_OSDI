@@ -11,6 +11,32 @@ void enable_mini_uart_interrupt(){
 	*AUX_MU_IER_REG = 0x1;
 }
 
+/*
+ * Implement all system call here.
+ */
+void svc_entry(unsigned int spsr, unsigned int elr, unsigned esr) {
+	if (esr>>26 != 0b010101){
+		uart_hex(esr);
+		uart_puts("is NOT an aarch64 svc, see https://developer.arm.com/documentation/ddi0601/2020-12/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-\n");
+		return;
+	}
+	int call = (esr & 0xFFFFFF);
+	switch (call) {
+	case 0:
+		// spsr, esr's [63:32] are both RES0, use 32 bit show instead
+		uart_puts("\n\nspsr_elx:\t");
+		uart_hex(spsr);
+		uart_puts("\nelr:\t\t");
+		uart_hex(elr);
+		uart_puts("\nesr\t\t");
+		uart_hex(esr);
+		break;
+	default:
+		uart_puts("System call/Behavior not implemented!\n");
+		break;
+	}
+}
+
 void sp_elx_handler(){
 	if (*IRQs1 & (1<<29)){
 		int uart = *AUX_MU_IIR_REG & 0b110;

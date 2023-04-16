@@ -83,7 +83,7 @@ unsigned int * load_prog (void * prog) {
         int ns=hex2bin(header->c_namesize,8);
         int fs=hex2bin(header->c_filesize,8);
         if(!memcmp(buf+sizeof(cpio_t), (char *)prog, ns-1)){
-            uart_puts("HIT\n");
+            uart_puts("HIT, at ");
             // Only one user program, hard writing return address to 0x90000000 for further more applications
             ret = buf+sizeof(cpio_t)+ns;
             return ret + (8-(ret%8));

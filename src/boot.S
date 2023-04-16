@@ -6,7 +6,6 @@ _start:
 	mov x25, x0
     bl from_el2_to_el1
     bl set_exception_vector_table
-	bl core_timer_enable
     // set top of stack just before our code (stack grows to a lower address per AAPCS64)
     adr     x1, _start
     mov     sp, x1
@@ -82,6 +81,15 @@ exception_handler:
     load_all
     eret
 
+svc_handler:
+	save_all
+	mrs x0, spsr_el1
+	mrs x1, elr_el1
+	mrs x2, esr_el1
+	bl svc_entry
+	load_all
+	eret
+
 sp_elx_irq_handler:
     save_all
     bl sp_elx_handler
@@ -112,7 +120,7 @@ exception_vector_table:
     b exception_handler
     .align 7
 // Exception from the current EL while using SP_ELx
-    b exception_handler
+    b svc_handler
     .align 7
     b sp_elx_irq_handler
     .align 7
@@ -139,6 +147,7 @@ set_exception_vector_table:
 
 .equ CORE0_TIMER_IRQ_CTRL, 0x40000040
 
+.global core_timer_enable
 core_timer_enable:
     mov x0, 1
     msr cntp_ctl_el0, x0 // enable
@@ -148,4 +157,6 @@ core_timer_enable:
     ldr x1, =CORE0_TIMER_IRQ_CTRL
     str w0, [x1] // unmask timer interrupt
 	ret
+
+
 

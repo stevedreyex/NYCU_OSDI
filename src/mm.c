@@ -83,8 +83,9 @@ struct page * buddy_alloc(int order){
 			uart_int(j-1);
 		}
 
-		uart_puts("\nFinally puts chunk in memory:");
+		uart_puts("Finally puts chunk in memory:");
 		uart_hex(target->phy_addr);
+		uart_puts("\n");
 		dump_free_area();
 		return target;
 	}
@@ -398,7 +399,7 @@ void put_memory_reserve(unsigned start, unsigned end){
 
 struct page * reserve_memory_block(reserved_t * reserved){
 	int order = round_up_to_order(reserved->offset);
-	uart_puts("A reserve a page with order ");
+	uart_puts("\nA reserve a page with order ");
 	uart_int(order);
 	struct list_head * curr = free_area[MAX_ORDER].free_list.next;
 	while (((page_t *)curr)->phy_addr != reserved->start) {
@@ -412,17 +413,18 @@ struct page * reserve_memory_block(reserved_t * reserved){
 
 	for(int j = MAX_ORDER; j > order; j--){
 		int downward_buddy_pfn = FIND_BUDDY_PFN(target->pfn, j-1);
-		uart_puts("\nDownward buddy pfn: ");
-		uart_int(downward_buddy_pfn);
+		// uart_puts("\nDownward buddy pfn: ");
+		// uart_int(downward_buddy_pfn);
 		struct page * downward_buddy = &pageframe[downward_buddy_pfn];
 		push2free(downward_buddy, &free_area[j-1], j-1);
-		uart_puts("\nSplitted into 2 chunks in order: ");
-		uart_int(j-1);
+		// uart_puts("\nSplitted into 2 chunks in order: ");
+		// uart_int(j-1);
 	}
 
-	uart_puts("\nFinally puts chunk in memory:");
+	uart_puts("Finally puts chunk in memory:");
 	uart_hex(target->phy_addr);
-	dump_free_area();
+	uart_puts("\n");
+	// dump_free_area();
 	return target;
 }
 

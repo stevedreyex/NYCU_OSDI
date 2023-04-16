@@ -80,6 +80,17 @@ void help_service() {
 	uart_puts("buddy:\t\tDemo Buddy System[1, 2, 1, 1, 3]\n");
 	uart_puts("dyn:\t\tDemo Dynamic Allocator (size: 2000)\n");
 	uart_puts("simp_malloc:\tsimple malloc on heap\n");
+	uart_puts("timer:\tenable core timer\n");
+	uart_puts("test:\ttest functionality slot\n");
+}
+
+void enable_timer_service() {
+	core_timer_enable();
+	uart_puts("Core Timer is now enabled!\n");
+}
+
+void test_service() {
+    asm volatile ("svc 1");	
 }
 
 unsigned int parse_cmd(char *cmd){
@@ -99,7 +110,9 @@ unsigned int parse_cmd(char *cmd){
 		{.name = "async", .handler = async_service},
 		{.name = "buddy", .handler =  buddy_service},
 		{.name = "dyn", .handler = dyn_service},
-		{.name = "simp_malloc", .handler = simp_malloc_service}
+		{.name = "simp_malloc", .handler = simp_malloc_service},
+		{.name = "timer", .handler = enable_timer_service},
+		{.name = "test", .handler = test_service}
     };
     for (int i=0; i<ARR_SIZE(commands); i++) {
         if (str_comp(cmd, commands[i].name)) {
@@ -163,9 +176,12 @@ void print_core_timer(unsigned long frq, unsigned long cnt) {
 void exec_prog(char * addr){
     uart_hex(addr);
 	uart_puts("\n");
+	// Holds the saved process state when an exception is taken to EL0
     asm volatile ("mov x0, 0");
-    asm volatile ("msr spsr_el1, x0"); //Holds the saved process state when an exception is taken to EL1
+    asm volatile ("msr spsr_el1, x0"); 
+	// Set the user program start address
     asm volatile ("msr elr_el1, %0": :"r" (addr));
+	// Set user prog stack at 
     asm volatile ("mov x0, 0x60000");
     asm volatile ("msr sp_el0, x0");
     asm volatile ("eret");

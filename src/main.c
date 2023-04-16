@@ -42,11 +42,11 @@ void kernel_main(void *dtb)
 	// For Spin Table of Multicore boot
 	put_memory_reserve(0x0, 0x2000);
 
-	dump_mem_reserved();
+	// dump_mem_reserved();
 	
 	page_init();
 	free_area_init();
-	dump_free_area();
+	// dump_free_area();
 	apply_memory_reserve();
 	// buddy_init();
 	
