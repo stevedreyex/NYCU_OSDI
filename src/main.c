@@ -1,90 +1,90 @@
-#include "mini_uart.h"
-#include "shell.h"
 #include "cpio.h"
-#include "utils.h"
-#include "peripherals/mailbox.h"
 #include "dtb.h"
+#include "mini_uart.h"
 #include "mm.h"
+#include "peripherals/mailbox.h"
 #include "printf.h"
+#include "shell.h"
+#include "utils.h"
 #include <cpio.h>
 #define MAX_CMD 512
 
+enum stat { read, parse };
 
-enum stat {
-	read,
-	parse
-};
+void kernel_main(void *dtb) {
+  uart_init();
+  uart_puts("\n");
+  // Temporarily commented the dtb part: depercated now due to ELs
+  //
+  init_printf(0, putc);
+  printf("Success %d!\n", 100);
 
-void kernel_main(void *dtb)
-{
-	uart_init();
-	uart_puts("\n");
-// Temporarily commented the dtb part: depercated now due to ELs
-//
-	init_printf(0, putc);
-	printf("Success %d!\n", 100);
+  set_dtb(dtb);
 
-	set_dtb(dtb);
+  uart_puts("initrd before callback:");
+  uart_hex(get_initramfs());
+  uart_puts("\nfind dtb from ");
+  uart_hex(dtb);
+  find_dtb(dtb, "linux,initrd-start", 18, &callback_initramfs);
 
-	uart_puts("initrd before callback:");
-	uart_hex(get_initramfs());
-	uart_puts("\nfind dtb from ");
-	uart_hex(dtb);
-	find_dtb(dtb, "linux,initrd-start", 18, &callback_initramfs);
+  uart_puts("\ninitrd after callback:");
+  uart_hex(get_initramfs());
+  uart_puts("\n");
 
-	uart_puts("\ninitrd after callback:");
-	uart_hex(get_initramfs());
-	uart_puts("\n");
-	
-	mem_reserved_init();
-	// For Heap and Code Section
-	put_memory_reserve(0x80000, 0xA0000);
-	// For Initramfs.cpio
-	put_memory_reserve(get_initramfs(), get_initramfs() + get_initramfs_size());
-	// For DTB
-	put_memory_reserve(dtb, dtb + get_dtb_size());
-	// For Spin Table of Multicore boot
-	put_memory_reserve(0x0, 0x2000);
+  mem_reserved_init();
+  // For Heap and Code Section
+  put_memory_reserve(0x80000, 0xA0000);
+  // For Initramfs.cpio
+  put_memory_reserve(get_initramfs(), get_initramfs() + get_initramfs_size());
+  // For DTB
+  put_memory_reserve(dtb, dtb + get_dtb_size());
+  // For Spin Table of Multicore boot
+  put_memory_reserve(0x0, 0x2000);
 
-	// dump_mem_reserved();
-	
-	page_init();
-	free_area_init();
-	// dump_free_area();
-	apply_memory_reserve();
-	// buddy_init();
-	
-	// dyn_init();
+  // dump_mem_reserved();
 
-	Welcome();
-	uart_puts("\n");
-	uart_puts("Please type: \n");
-	enum stat s = read;
-	char *cmd[MAX_CMD];
+  page_init();
+  free_area_init();
+  // dump_free_area();
+  apply_memory_reserve();
+  // buddy_init();
 
-	// buf_clear(cmd);
-	while (1) {
-		// initrd_list();
-		if(s == read){
-			uart_puts("# ");
-			// TO test inst,  quote this line
-			shell_input(cmd);
-			s = parse;
-		} else {
-			// TO test inst,  modify this line
-			// parse_cmd(cmd, dtb);
-			parse_cmd(cmd);
-			
-			// parse_cmd("ls");
-			s = read;
-		}
-	}
+  // dyn_init();
+
+  Welcome();
+  uart_puts("\n");
+  uart_puts("Please type: \n");
+  enum stat s = read;
+  char *cmd[MAX_CMD];
+
+  // buf_clear(cmd);
+  while (1) {
+    // initrd_list();
+    if (s == read) {
+      uart_puts("# ");
+      // TO test inst,  quote this line
+      shell_input(cmd);
+      s = parse;
+    } else {
+      // TO test inst,  modify this line
+      // parse_cmd(cmd, dtb);
+      parse_cmd(cmd);
+
+      // parse_cmd("ls");
+      s = read;
+    }
+  }
 }
 
-void Welcome(){
-	uart_puts("  ____ _____ _____ _____ _    _   _    ___  ____   ____ ____   ___ ____  _____ \n");
-	uart_puts(" / ___|_   _| ____|  ___/ \\  | \\ | |  / _ \\/ ___| / ___|___ \\ / _ \\___ \\|___ / \n");
-	uart_puts(" \\___ \\ | | |  _| | |_ / _ \\ |  \\| | | | | \\___ \\| |     __) | | | |__) | |_ \\ \n");
-	uart_puts("  ___) || | | |___|  _/ ___ \\| |\\  | | |_| |___) | |___ / __/| |_| / __/ ___) |\n");
-	uart_puts(" |____/ |_| |_____|_|/_/   \\_\\_| \\_|  \\___/|____/ \\____|_____|\\___/_____|____/ \n");
+void Welcome() {
+  uart_puts("  ____ _____ _____ _____ _    _   _    ___  ____   ____ ____   "
+            "___ ____  _____ \n");
+  uart_puts(" / ___|_   _| ____|  ___/ \\  | \\ | |  / _ \\/ ___| / ___|___ \\ "
+            "/ _ \\___ \\|___ / \n");
+  uart_puts(" \\___ \\ | | |  _| | |_ / _ \\ |  \\| | | | | \\___ \\| |     "
+            "__) | | | |__) | |_ \\ \n");
+  uart_puts("  ___) || | | |___|  _/ ___ \\| |\\  | | |_| |___) | |___ / __/| "
+            "|_| / __/ ___) |\n");
+  uart_puts(" |____/ |_| |_____|_|/_/   \\_\\_| \\_|  \\___/|____/ "
+            "\\____|_____|\\___/_____|____/ \n");
 }
