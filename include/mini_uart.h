@@ -24,5 +24,6 @@ void cancel_reset();
 void mbox_call(unsigned char ch);
 int memcmp(void *s1, void *s2, int n);
 void delay(int sec);
+void putc(void * p, char c);
 
 #endif  /*_MINI_UART_H */

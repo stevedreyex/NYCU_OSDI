@@ -5,6 +5,7 @@
 #include "peripherals/mailbox.h"
 #include "dtb.h"
 #include "mm.h"
+#include "printf.h"
 #include <cpio.h>
 #define MAX_CMD 512
 
@@ -20,6 +21,9 @@ void kernel_main(void *dtb)
 	uart_puts("\n");
 // Temporarily commented the dtb part: depercated now due to ELs
 //
+	init_printf(0, putc);
+	printf("Success %d!\n", 100);
+
 	set_dtb(dtb);
 
 	uart_puts("initrd before callback:");

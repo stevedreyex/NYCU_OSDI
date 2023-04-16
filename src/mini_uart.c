@@ -261,3 +261,7 @@ void mbox_call(unsigned char ch)
     uart_hex(mbox[6]);
     uart_puts("\n");
 }
+
+void putc(void * p, char c){
+	uart_send(c);
+}
