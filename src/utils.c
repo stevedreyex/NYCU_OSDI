@@ -46,14 +46,19 @@ void uart_int(int i) {
   uart_send('0' + (temp % 10));
 }
 
-int atoi(char *c) {
-  int ret = 0;
-  for (int i = sizeof(c) - 1; i >= 0; i--) {
-    ret += (c[i] - 0x48);
-  }
-  return ret;
+int atoi(const char* str) {
+    int result = 0;
+    int sign = 1;
+    if (*str == '-') {
+        sign = -1;
+        str++;
+    }
+    while (*str != '\0') {
+        result = result * 10 + (*str - '0');
+        str++;
+    }
+    return sign * result;
 }
-
 // void uart_printf(char *s, )
 
 void buf_clear(char *buf, int BUF_SIZE) {
@@ -78,4 +83,24 @@ void delay(int sec) {
   for (int i = 0; i < sec * 1000000000; i++) {
     asm("nop;");
   }
+}
+
+void strcpy(char *dest,  char *src)
+{
+    char *cur = src;
+    char *des_cur = dest;
+    for(; *cur != '\0'; cur++, des_cur++) {
+        *des_cur = *cur;   
+    }
+    *des_cur = '\0';
+}
+
+void strncpy(char *dest,  char *src, int n)
+{
+    char *cur = src;
+    char *des_cur = dest;
+    for(; n > 0; cur++, des_cur++, n--) {
+        *des_cur = *cur;   
+    }
+    *des_cur = '\0';
 }
