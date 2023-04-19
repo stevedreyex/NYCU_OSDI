@@ -68,6 +68,6 @@ void disable_tx() { *AUX_MU_IER_REG &= 0x1; }
 
 void disable_rx() { *AUX_MU_IER_REG &= 0x2; }
 
-void enable_tx() { *AUX_MU_IER_REG |= 0x1; }
+void enable_tx() { *AUX_MU_IER_REG |= 0x2; }
 
-void exable_rx() { *AUX_MU_IER_REG |= 0x2; }
+void exable_rx() { *AUX_MU_IER_REG |= 0x1; }
