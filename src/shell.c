@@ -60,6 +60,7 @@ void help_service() {
   uart_puts("simp_malloc:\tsimple malloc on heap\n");
   uart_puts("timer:\tenable core timer\n");
   uart_puts("test:\ttest functionality slot\n");
+  uart_puts("set[msg][sec]:\tshow the message after n seconds\n");
 }
 
 void enable_timer_service() {
@@ -68,6 +69,20 @@ void enable_timer_service() {
 }
 
 void test_service() { asm volatile("svc 1"); }
+
+void set_handler(char * cmd){
+	// ignore the "set" and parse the string
+	int index = 4;
+	char * string[MAX_CMD];
+	char * sec[MAX_CMD];
+	while(cmd[index] != ' '){
+		index++;
+	}
+	strncpy(string, cmd+4, index-4);
+	index++;
+	strcpy(sec, cmd+index);
+	// uart_int(atoi(sec));
+}
 
 unsigned int parse_cmd(char *cmd) {
   struct {
@@ -88,6 +103,10 @@ unsigned int parse_cmd(char *cmd) {
                   {.name = "simp_malloc", .handler = simp_malloc_service},
                   {.name = "timer", .handler = enable_timer_service},
                   {.name = "test", .handler = test_service}};
+  if(!memcmp(cmd, "set", 3)){
+	  set_handler(cmd);
+	return;
+  }
   for (int i = 0; i < ARR_SIZE(commands); i++) {
     if (str_comp(cmd, commands[i].name)) {
       commands[i].handler();
