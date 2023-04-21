@@ -6,7 +6,8 @@
 #include "printf.h"
 #include "shell.h"
 #include "utils.h"
-#include <cpio.h>
+#include "cpio.h"
+#include "timer.h"
 #define MAX_CMD 512
 
 enum stat { read, parse };
@@ -40,7 +41,9 @@ void kernel_main(void *dtb) {
   put_memory_reserve(dtb, dtb + get_dtb_size());
   // For Spin Table of Multicore boot
   put_memory_reserve(0x0, 0x2000);
-
+  // timer queue
+  timer_queue_initialize();
+  enable_interrupt();
   // dump_mem_reserved();
 
   page_init();

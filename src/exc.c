@@ -51,8 +51,11 @@ void sp_elx_handler() {
                  "mrs x1, cntpct_el0;"
                  "stp lr, x0, [sp, #-16]!;"
                  "bl print_core_timer;"
+				 // "bl timer_decrement;"
                  "ldp lr, x0, [sp], #16;"
-                 "lsl x0, x0, #1;"
+				 // frequency is 1, left shift one bit to let it be '2' sec
+				 // "lsl x0, x0, #1;"
+				 // set an expried timer, for the next interrupt.
                  "msr cntp_tval_el0, x0;"
                  "ret;");
   }
@@ -71,3 +74,13 @@ void disable_rx() { *AUX_MU_IER_REG &= 0x2; }
 void enable_tx() { *AUX_MU_IER_REG |= 0x2; }
 
 void exable_rx() { *AUX_MU_IER_REG |= 0x1; }
+
+//void enable_interrupt(){
+//	asm volatile("msr daifclr, 0xf;"
+//				 "ret;");
+//}
+
+//void disable_interrupt(){
+//	asm volatile("msr daifset, 0xf;"
+//				 "ret;");
+//}

@@ -7,5 +7,7 @@ void disable_tx();
 void disable_rx();
 void enable_tx();
 void enable_rx();
+// void enable_interrupt();
+// void disable_interrupt();
 
 #endif

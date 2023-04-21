@@ -4,6 +4,7 @@
 #include "mm.h"
 #include "peripherals/mailbox.h"
 #include "utils.h"
+#include "timer.h"
 #define MAX_CMD 64
 
 #define ARR_SIZE(ARR) (sizeof(ARR) / sizeof(ARR[0]))
@@ -82,6 +83,7 @@ void set_handler(char * cmd){
 	index++;
 	strcpy(sec, cmd+index);
 	// uart_int(atoi(sec));
+	add_timer(string, atoi(sec), uart_puts);
 }
 
 unsigned int parse_cmd(char *cmd) {

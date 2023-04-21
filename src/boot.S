@@ -77,7 +77,7 @@ from_el2_to_el1:
 
 exception_handler:
     save_all
-    bl exception_entry
+    // bl exception_entry
     load_all
     eret
 
@@ -158,5 +158,12 @@ core_timer_enable:
     str w0, [x1] // unmask timer interrupt
 	ret
 
+.global enable_interrupt
+enable_interrupt:
+	msr daifclr, 0xf
+	ret
 
-
+.global disable_interrupt
+disable_interrupt:
+	msr daifset, 0xf
+	ret
