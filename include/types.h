@@ -1,4 +1,3 @@
-// Reference from @Yunyung
 #ifndef _KERNEL_TYPES_H
 #define _KERNEL_TYPES_H
 

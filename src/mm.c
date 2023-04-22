@@ -1,505 +1,560 @@
 #include "mm.h"
-#include "mini_uart.h"
-#include "types.h"
-// Dynamic allocation starts at line 'Start Dynamic allocation'
-page_t pageframe[PAGE_FRAME_NUM];
+#include "uart.h"
+#include "printf.h"
+
+
+page_t bookkeep[PAGE_FRMAME_NUM];
 free_area_t free_area[MAX_ORDER + 1];
-object_allocator_t obj_alloc_pool[MAX_DYNAMIC_ALLOC_NUM];
-reserved_t mem_reserved[MAX_MEM_RESERVED];
 
-void page_init() {
-  uart_puts("\nNumbers of Page Frame: 0x");
-  uart_hex(PAGE_FRAME_NUM);
-  uart_puts("\n");
+obj_allocator_t obj_alloc_pool[MAX_OBJ_ALLOCTOR_NUM];
 
-  for (int i = 0; i < PAGE_FRAME_NUM; i++) {
-    // -1 means unallocated
-    pageframe[i].order = -1;
-    pageframe[i].pfn = i;
-    pageframe[i].used = Free;
-    pageframe[i].phy_addr = BUDDY_LO + PAGE_SIZE * i;
-  }
-}
-
-void free_area_init() {
-  // Made all page into a node of linked list
-  for (int i = 0; i <= MAX_ORDER; i++) {
-    INIT_LIST_HEAD(&free_area[i].free_list);
-  }
-
-  // Add the top order to the freelist and wait for alloc. Pages will split when
-  // alloc is needed.
-  for (int i = 0; i < PAGE_FRAME_NUM; i += MAX_ORDER_SIZE) {
-    push2free(&pageframe[i], &free_area[MAX_ORDER], MAX_ORDER);
-  }
-}
-
-/**
- *  For Splitted blocks, if unused, then add to freelist to preserve the space
- */
-void push2free(page_t *page, free_area_t *free_area, int order) {
-  list_add_tail(&page->list, &free_area->free_list);
-  page->order = order;
-  page->used = Free;
-  free_area->map += 1;
-}
-
-/**
- *  Two Scenarios:
- *  1. If alloc direcly find list from freelist, remove from it.
- *	2. If the memory block can merge to a bigger one, remove and merge.
- */
-void pop_free(page_t *page, free_area_t *freearea) {
-  list_del(&page->list);
-  page->used = Taken;
-  free_area->map -= 1;
-}
-
-struct page *buddy_alloc(int order) {
-  uart_puts("\nAlloc start: Try to alloc a block in order ");
-  uart_int(order);
-
-  for (int i = order; i <= MAX_ORDER; i++) {
-    // Find if corresponding order block exists, else find higher order block
-    // then spilt
-    uart_puts("\nCurrent Find Block Order:");
-    uart_int(i);
-
-    if (list_empty(&free_area[i].free_list)) {
-      uart_puts("\nNo free block in this order, split upper level order: ");
-      uart_int(i + 1);
-      continue;
+void page_init() 
+{
+    for (int i = 0;i < PAGE_FRMAME_NUM;i++) {
+        bookkeep[i].pfn = i;
+        bookkeep[i].used = Free;
+        bookkeep[i].phy_addr = LOW_MEMORY + i*PAGE_SIZE;
+        bookkeep[i].order = -1; 
     }
-    // Find Current or higher level block to alloc
-    struct page *target = (struct page *)free_area[i].free_list.next;
-    pop_free(target, &free_area[i]);
-    target->order = order;
+}
 
-    for (int j = i; j > order; j--) {
-      int downward_buddy_pfn = FIND_BUDDY_PFN(target->pfn, j - 1);
-      uart_puts("\nDownward buddy pfn: ");
-      uart_int(downward_buddy_pfn);
-      struct page *downward_buddy = &pageframe[downward_buddy_pfn];
-      push2free(downward_buddy, &free_area[j - 1], j - 1);
-      uart_puts("\nSplitted into 2 chunks in order: ");
-      uart_int(j - 1);
+void free_area_init()
+{
+    for (int i = 0;i < MAX_ORDER + 1;i++) {
+        INIT_LIST_HEAD(&free_area[i].freelist);
     }
 
-    uart_puts("Finally puts chunk in memory:");
-    uart_hex(target->phy_addr);
-    uart_puts("\n");
-    dump_free_area();
-    return target;
-  }
-}
-
-void buddy_free(struct page *page) {
-  uart_puts("\nFree Start: \n");
-  int buddy_pfn = FIND_BUDDY_PFN(page->pfn, page->order);
-  page_t *buddy = &pageframe[buddy_pfn];
-  while (page->order < MAX_ORDER && page->order == buddy->order &&
-         buddy->used == Free) {
-    uart_puts("\nCan merge to bigger block in order: ");
-    uart_int(page->order + 1);
-    uart_puts("\nPage pfn: ");
-    uart_hex(page->pfn);
-    uart_puts("\nBuddy pfn: ");
-    uart_hex(buddy_pfn);
-
-    // Free from freelist and coalesce
-    pop_free(buddy, &free_area[buddy->order]);
-    page = &pageframe[FIND_LBUDDY_PFN(page->pfn, page->order)];
-    page->order += 1;
-
-    buddy_pfn = FIND_BUDDY_PFN(page->pfn, page->order);
-    buddy = &pageframe[buddy_pfn];
-  }
-
-  push2free(page, &free_area[page->order], page->order);
-
-  uart_puts("\nFree Done.\n");
-  dump_free_area();
-}
-
-void buddy_init() {
-  dump_free_area();
-
-  int allocate_test1[] = {1, 2, 1, 1, 3};
-  int test1_size = sizeof(allocate_test1) / sizeof(int);
-  page_t *(one_pages[test1_size]);
-  for (int i = 0; i < test1_size; i++) {
-    page_t *one_page =
-        buddy_alloc(allocate_test1[i]); // Allocate one page frame
-    // printf("\n Allocated Block{ pfn(%d), order(%d), phy_addr_16(0x%x) }:
-    // %u\n", one_page->pfn, one_page->order, one_page->phy_addr);
-    one_pages[i] = one_page;
-  }
-  buddy_free(one_pages[2]);
-  buddy_free(one_pages[1]);
-  buddy_free(one_pages[4]);
-  buddy_free(one_pages[3]);
-  buddy_free(one_pages[0]);
-}
-
-// Start of Dynamic allocation
-
-void obj_alloc_init(object_allocator_t *obj_alloc, int objsize) {
-  INIT_LIST_HEAD(&obj_alloc->empty);
-  INIT_LIST_HEAD(&obj_alloc->partial);
-  INIT_LIST_HEAD(&obj_alloc->full);
-  obj_alloc->curr = NULL;
-  obj_alloc->objsize = objsize;
-  obj_alloc->obj_per_page = PAGE_SIZE / objsize;
-  obj_alloc->obj_used = 0;
-  obj_alloc->page_used = 0;
-}
-
-void obj_page_init(page_t *page) {
-  page->obj_used = 0;
-  page->free = NULL;
-}
-
-int obj_alloc_reg(int objsize) {
-  // Find a Dynamic allocator that has not been used
-  for (int i = 0; i < MAX_DYNAMIC_ALLOC_NUM; i++) {
-    if (obj_alloc_pool[i].objsize != 0)
-      continue;
-    else {
-      obj_alloc_init(&obj_alloc_pool[i], objsize);
-      uart_puts("Register a object at pool! At object ");
-      uart_int(i);
-      return i;
+    for (int i = 0;i < PAGE_FRMAME_NUM;i += MAX_ORDER_SIZE) {
+        push_block_to_free_area(&bookkeep[i], &free_area[MAX_ORDER], MAX_ORDER);
     }
-  }
-  // Iterate through the dynamic alloc pool turn out can't find any available
-  // allocator
-  return -1;
+}
+
+void push_block_to_free_area(page_t *pushed_block, free_area_t *fa, int order) 
+{
+    list_add_tail(&pushed_block->list, &fa->freelist);
+    pushed_block->order = order;
+    pushed_block->used = Free;
+    fa->nr_free += 1;
+}
+
+void pop_block_from_free_area(page_t *poped_block, free_area_t *fa) {
+    list_del(&poped_block->list);
+    poped_block->used = Taken;
+    fa->nr_free--;
+}
+
+struct page *buddy_block_alloc(int order) 
+{
+    #ifdef __DEBUG
+    // printf("\n[buddy_block_alloc]Before allocate buddy memory:");
+    // dump_buddy();
+    printf("[buddy_block_alloc] Requested Order: %d, Size: %d\n\n", order, 1 << order);
+    #endif //__DEBUG
+
+    if ( (order<0) | (order>MAX_ORDER) ) {
+        printf("[buddy_block_alloc] %d is invalid order!\n", order);
+        return 0;
+    }
+
+   
+
+    for (int i = order;i <= MAX_ORDER;i++) {
+        if (list_empty(&free_area[i].freelist)) continue;
+        
+        // Found target block, get and remove one block from target freelist
+        struct page *target_block = (struct page *) free_area[i].freelist.next;
+        pop_block_from_free_area(target_block, &free_area[i]);
+        target_block->order = order;
+
+        // Cut off bottom half of the block and put it back to corresponding freelist
+        // until the size equals the requested order. 
+        for (int current_order = i;current_order > order;current_order--) {
+            int downward_order = current_order - 1; 
+
+            int buddy_pfn = FIND_BUDDY_PFN(target_block->pfn, downward_order);
+            struct page *bottom_half_block = &bookkeep[buddy_pfn];
+            push_block_to_free_area(bottom_half_block, &free_area[downward_order], downward_order);
+
+            #ifdef __DEBUG   
+            printf("Push back -> Redundant block(bottom half)  { pfn(%d), order(%d) }\n", 
+                    bottom_half_block->pfn, bottom_half_block->order);
+            #endif //__DEBUG
+        }
+
+        #ifdef __DEBUG   
+        printf("\n[buddy_block_alloc]After allocate buddy memory:");
+        dump_buddy();
+        
+        printf("[buddy_block_alloc] Result - Allocated block{ pfn(%d), order(%d), phy_addr_16(0x%x) }\n",
+                target_block->pfn, target_block->order, target_block->phy_addr);
+        printf("[buddy_block_alloc] **Done**\n\n");
+        #endif //__DEBUG
+
+        return target_block;
+        
+    }
+
+    
+    printf("[buddy_block_alloc] No free memory space!\n");
+    return 0;
+}
+
+void buddy_block_free(struct page* block) 
+{
+    #ifdef __DEBUG
+     printf("\n[buddy_block_free] **Start free block{ pfn(%d), order(%d) }**\n", 
+           block->pfn, block->order);
+    // printf("\n[buddy_block_free]Before free memory:");
+    // dump_buddy();
+    #endif //__DEBUG
+
+    // Coalesce free buddy
+    int buddy_pfn = FIND_BUDDY_PFN(block->pfn, block->order);
+    page_t *buddy_block = &bookkeep[buddy_pfn];
+    while (block->order < MAX_ORDER && block->order == buddy_block->order && 
+           buddy_block->used == Free) {
+        #ifdef __DEBUG
+        printf("Buddy{ pfn(%d), order(%d) }\n", buddy_block->pfn, buddy_block->order);
+        #endif //__DEBUG
+        // Pop buddy block from frealist
+        pop_block_from_free_area(buddy_block, &free_area[buddy_block->order]);
+
+        // Find left block as primary block
+        int lbuddy_pfn = FIND_LBUDDY_PFN(block->pfn, block->order);
+        block = &bookkeep[lbuddy_pfn];
+        
+        // Add 1 to order in primary block. It's means that it merge two block. 
+        block->order += 1;
+        
+        // prepare next merge iteration
+        buddy_pfn = FIND_BUDDY_PFN(block->pfn, block->order);
+        buddy_block = &bookkeep[buddy_pfn];
+    } 
+    // Push merged block to freelist
+    push_block_to_free_area(block, &free_area[block->order], block->order);
+
+    #ifdef __DEBUG
+    printf("\n[buddy_block_free]After free memory:");
+    dump_buddy();
+    printf("[buddy_block_free] **Done**\n\n");
+    #endif //__DEBUG
+
+    
+}
+
+
+#ifdef __DEBUG
+void dump_buddy()
+{
+    printf("\n---------Buddy Debug---------\n");
+    printf("***Freelist(free_area) Debug***");
+    for (int i = 0;i < MAX_ORDER+1 ;i++) {
+        printf("\nOrder-%d\n", i);
+
+        struct list_head *pos;
+        list_for_each(pos, (struct list_head *) &free_area[i].freelist) {
+            printf(" -> {pfn(%d)} {phy_addr_16(0x%x)}", ((struct page *)pos)->pfn, ((struct page *)pos)->phy_addr);
+        }
+        
+            
+    }
+    printf("\n---------End Buddy Debug---------\n\n");
+
+}
+#endif
+
+void __init_obj_alloc(obj_allocator_t *obj_allocator_p, int objsize)
+{
+    INIT_LIST_HEAD(&obj_allocator_p->full);   
+    INIT_LIST_HEAD(&obj_allocator_p->partial); 
+    INIT_LIST_HEAD(&obj_allocator_p->empty);   
+    obj_allocator_p->curr_page = NULL;
+    
+    obj_allocator_p->objsize = objsize;
+    obj_allocator_p->obj_per_page = PAGE_SIZE / objsize;
+    obj_allocator_p->obj_used = 0;
+    obj_allocator_p->page_used = 0;
+    
+}
+
+void __init_obj_page(page_t *page_p) 
+{
+    page_p->obj_used = 0;
+    page_p->obj_alloc = NULL;
+    page_p->free = NULL;
+}
+
+int register_obj_allocator(int objsize) 
+{
+    if (objsize < MIN_ALLOCATAED_OBJ_SIZE) {
+        objsize = MIN_ALLOCATAED_OBJ_SIZE;
+        printf("[register_obj_allocator] Min object size is 8, automatically set it to 8 ");
+    }
+
+    if (objsize > MAX_ALLOCATAED_OBJ_SIZE) {
+        objsize = MAX_ALLOCATAED_OBJ_SIZE;
+        printf("[register_obj_allocator] Max object size is 2048, automatically set it to 2048 ");
+    }
+
+    for (int token = 0;token < MAX_OBJ_ALLOCTOR_NUM;token++) {
+        if (obj_alloc_pool[token].objsize != 0) 
+            continue;
+
+        __init_obj_alloc(&obj_alloc_pool[token], objsize);
+
+        #ifdef __DEBUG
+        printf("[register_obj_allocator] Successfully Register object allocator! {objsize(%d), token(%d)}\n"
+                ,objsize, token);
+        #endif //__DEBUG 
+
+        return token;
+    }
+
+    printf("[register_obj_allocator] Allocator pool has been fully registered.");
+    return -1;
 }
 
 void *obj_allocate(int token) {
-  object_allocator_t *obj_alloc = &obj_alloc_pool[token];
-  void *alloc_addr = NULL;
+    if (token < 0 || token >= MAX_OBJ_ALLOCTOR_NUM) {
+        printf("[obj allocator] Invalid token\n");
+        return 0;
+    }    
+    
+    obj_allocator_t *obj_allocator_p = &obj_alloc_pool[token];
+    void *allocated_addr = NULL; // address of allocated object 
 
-  // This pool object didn't have a page yet
-  if (obj_alloc->curr == NULL) {
-    uart_puts("Current page of the Object Allocator is NULL, find a page.\n");
-    page_t *page;
-    // Partial is exist then use the partial one
+    #ifdef __DEBUG
+    printf("[obj_allocate] Requested token: %d, size: %d\n",token, obj_allocator_p->objsize);
+    // printf("[obj_allocate] Before allocation:");
+    // dump_obj_alloc(obj_allocator_p);
+    #endif //__DEBUG
+    
+    if (obj_allocator_p->curr_page == NULL) {
+        page_t *page_p;
+        if (!list_empty(&obj_allocator_p->partial)) { 
+            // Use partial allocated page
+            page_p = (page_t *) obj_allocator_p->partial.next;
+            list_del(&page_p->list);
+        } else if (!list_empty(&obj_allocator_p->empty)) {
+            // Use empty(no alloacted object) page
+            page_p = (page_t *) obj_allocator_p->empty.next;
+            list_del(&page_p->list);
+        } else {
+            // Demand a new page from buddy memory allocator
+            page_p = buddy_block_alloc(0);
+            __init_obj_page(page_p);
+            page_p->obj_alloc = obj_allocator_p;
 
-    if (!list_empty(&obj_alloc->partial)) {
-      uart_puts("Find Partial from existed page\n");
-      page = (page_t *)obj_alloc->partial.next;
-      list_del(&page->list);
+            obj_allocator_p->page_used += 1;
+        }
+        obj_allocator_p->curr_page = page_p;
     }
-    // Use a empty page
-    else if (!list_empty(&obj_alloc->empty)) {
-      uart_puts("Find Empty from existed page\n");
-      page = (page_t *)obj_alloc->empty.next;
-      list_del(&page->list);
+
+    /* TODO: Explain how obj_freelist work*/
+    struct list_head *obj_freelist = obj_allocator_p->curr_page->free;
+    if (obj_freelist != NULL) {
+        // Allocate memory by free list in current page
+        allocated_addr = obj_freelist;
+        obj_freelist = obj_freelist->next; // Point to next address of free object;
     }
-    // Get a new page from the buddy system
     else {
-      uart_puts(
-          "No existed Partial and Empty page can use, alloc from buddy.\n");
-      page = buddy_alloc(0);
-      obj_page_init(page);
-      // Is a page with Dynamic allocation, shall store this object
-      page->object_alloc = obj_alloc;
-      obj_alloc->page_used += 1;
+        // Allocate memory to requested object 
+        allocated_addr = (void *) obj_allocator_p->curr_page->phy_addr + 
+                         obj_allocator_p->curr_page->obj_used * obj_allocator_p->objsize;
     }
 
-    obj_alloc->curr = page;
-  } else {
-    uart_puts("Current page of the Object Allocator (Free list) Existed!!!\n");
-  }
+    obj_allocator_p->obj_used += 1;
+    obj_allocator_p->curr_page->obj_used += 1;
 
-  struct list_head *obj_freelist = obj_alloc->curr->free;
-  // obj_page_init was first called, which in the previous case 3
-  if (obj_freelist != NULL) {
-    uart_puts(
-        "Free of Current Page of Object existed, use the free space at: ");
-    alloc_addr = obj_freelist;
-    uart_hex(alloc_addr);
-    uart_puts("\n");
-    obj_alloc->curr->free = obj_freelist->next;
-    uart_hex(obj_freelist);
-    uart_puts(": The object Freelist");
-  } else {
-    uart_puts("This page is allocated at the first time, use the start address "
-              "of page: ");
-    // page base address add (num of objs) * (size per object)
-    alloc_addr = (void *)obj_alloc->curr->phy_addr +
-                 obj_alloc->curr->obj_used * obj_alloc->objsize;
-    uart_hex(alloc_addr);
-    uart_puts("\n");
-  }
-  obj_alloc->obj_used += 1;
-  obj_alloc->curr->obj_used += 1;
+    // Check if page full
+    if (obj_allocator_p->obj_per_page == obj_allocator_p->curr_page->obj_used) {
+        list_add_tail(&obj_allocator_p->curr_page->list, &obj_allocator_p->full);
+        obj_allocator_p->curr_page = NULL;
+    }
 
-  // Page might full after this obj is added, so check it
-  // Compare <obj_allocator:number for a page can store> with <Number of items
-  // already stored in a page>
-  if (obj_alloc->obj_per_page == obj_alloc->curr->obj_used) {
-    list_add_tail(&obj_alloc->curr->list, &obj_alloc->full);
-    // Is now full, need a new current page next time
-    obj_alloc->curr = NULL;
-  }
+    
+    #ifdef __DEBUG
+    printf("[obj_allocate] Allocated address: {phy_addr_16(%x)}\n", allocated_addr);
+    printf("[obj_allocate] After allocation:");
+    dump_obj_alloc(obj_allocator_p);
+    printf("[obj_allocate] **Done**\n\n");
+    #endif //__DEBUG
 
-  uart_puts("\nAllocated Successfully, the allocated address is at: ");
-  uart_hex(alloc_addr);
-  dump_dyn_area(obj_alloc);
-  return alloc_addr;
+    
+    return allocated_addr;
+    
+
 }
 
 void obj_free(void *obj_addr) {
-  int obj_pfn = PHY_ADDR_TO_PFN(obj_addr);
-  page_t *page = &pageframe[obj_pfn];
-  object_allocator_t *obj_alloc = page->object_alloc;
-  uart_puts("Delete item on pfn: ");
-  uart_int(obj_pfn);
-  uart_puts("\n");
+    // Find out corressponding page frame number and object allocator it belongs to.
+    int obj_pfn = PHY_ADDR_TO_PFN(obj_addr);
+    page_t *page_p = &bookkeep[obj_pfn];
+    obj_allocator_t *obj_allocator_p = page_p->obj_alloc;
+    
+    #ifdef __DEBUG
+    printf("\n[obj_free] Free object procedure!\n");
+    printf("[obj_free] Page info: 0x%x {pfn=(%d), obj_used(%d))\n", obj_addr, obj_pfn, page_p->obj_used);
+    printf("[obj_free] object free list point to {0x%x}\n", page_p->free);
+    // printf("[obj_free] Before free:");
+    // dump_obj_alloc(obj_allocator_p);
+    #endif // __DEBUG
 
-  // Page's list shall always points to the first free object
-  struct list_head *temp = page->free;
-  page->free = (struct list_head *)obj_addr;
-  page->free->next = temp;
+    // Make page's object freelist point to address of new first free object.
+    // And the contect of released object should record the orginal address 
+    // of first free object that object freelist previously point to.
+    // As the result, if we want to access second free object, just 
+    // using free->next(first 8 bytes) to get expected address. 
+    // So we can link and access all free object by this strategy without extra
+    // moemory space.
+    struct list_head *temp = page_p->free;
+    page_p->free = (struct list_head *) obj_addr;
+    page_p->free->next = temp;
 
-  obj_alloc->obj_used -= 1;
-  page->obj_used -= 1;
-  uart_puts("Object deleted, at: ");
-  uart_hex(obj_addr);
-  uart_puts("\n");
+    obj_allocator_p->obj_used -= 1;
+    page_p->obj_used -= 1;
 
-  // Full page may reduce to partial
-  if (obj_alloc->obj_per_page - 1 == page->obj_used) {
-    uart_puts("This page can reduce to partial page!\n");
-    list_del(&page->list);
-    list_add_tail(&page->list, &obj_alloc->partial);
-  }
-
-  // Partial page may reduce to empty
-  if (page->obj_used == 0 && obj_alloc->curr != page) {
-    uart_puts("This page can reduce to empty page!\n");
-    list_del(&page->list);
-    list_add_tail(&page->list, &obj_alloc->empty);
-  }
-  dump_dyn_area(obj_alloc);
-}
-
-void dyn_init() {
-  uart_puts("\nDynamic Allocator init start:\n");
-  int token = obj_alloc_reg(2000);
-  void *addr1 = obj_allocate(token); // 0
-  void *addr2 = obj_allocate(token);
-
-  void *addr3 = obj_allocate(token); // 1
-  void *addr4 = obj_allocate(token);
-
-  void *addr5 = obj_allocate(token); // 2
-  void *addr6 = obj_allocate(token);
-
-  void *addr7 = obj_allocate(token); // 3
-  void *addr11 = obj_allocate(token);
-
-  void *addr12 = obj_allocate(token); // 4
-  void *addr13 = obj_allocate(token);
-  obj_free(addr1);
-  obj_free(addr2);
-  void *addr14 = obj_allocate(token); // 0
-  void *addr15 = obj_allocate(token);
-
-  void *addr16 = obj_allocate(token); // 5
-
-  obj_free(addr11);
-  obj_free(addr5);
-  obj_free(addr15);
-  obj_free(addr3);
-
-  void *addr17 = obj_allocate(token); // 5
-  void *addr18 = obj_allocate(token); // 3
-}
-
-// Below are the area to dump imformations
-
-void dump_free_area() {
-  uart_puts("\n----------BUDDY----------\n");
-  uart_puts("Order 6: (Now Hide)");
-  for (int i = MAX_ORDER - 1; i >= 0; i--) {
-    uart_puts("\nOrder:");
-    uart_int(i);
-    struct list_head *pos;
-    list_for_each(pos, (struct list_head *)&free_area[i].free_list) {
-      uart_puts("-> [pfn: ");
-      uart_hex(((struct page *)pos)->pfn);
-      uart_puts(" phy_addr: ");
-      uart_hex(((struct page *)pos)->phy_addr);
-      uart_puts("] ");
+    // From full to partial 
+    if (obj_allocator_p->obj_per_page-1 == page_p->obj_used) {
+        list_del(&page_p->list); // pop out from full list
+        list_add_tail(&page_p->list, &obj_allocator_p->partial); // add to partial list 
     }
-  }
-  uart_puts("\n-----------END-----------\n");
+
+    // From partial to empty
+    // and make sure this page not currently used by object allocator
+    if (page_p->obj_used == 0 && obj_allocator_p->curr_page != page_p) {
+        list_del(&page_p->list); // pop out from partial list
+
+        // Return empty page to free page pool(free_area)
+        // otherwise, add it to empty list 
+        if (obj_allocator_p->page_used >= 10) { // TODO: Return empty page only if memory becomes tight
+            #ifdef __DEBUG
+            printf("[obj_free] Free empty page bacause memory is tight");
+            #endif // __DEBUG
+
+            obj_allocator_p->page_used -= 1;
+            page_p->free = NULL;
+            page_p->obj_alloc = NULL;
+            page_p->obj_used = 0;
+            buddy_block_free(page_p);
+        } else {
+            // Add to empty list
+            list_add_tail(&page_p->list, &obj_allocator_p->empty);
+        }
+    }
+
+    #ifdef __DEBUG
+    printf("[obj_free] After free:");
+    dump_obj_alloc(obj_allocator_p);
+    printf("[obj_free] **Done**\n\n");
+    #endif // __DEBUG
 }
 
-void dump_dyn_area(object_allocator_t *obj_alloc) {
-  uart_puts("\n-----------DYN-----------\n");
-  uart_puts("objsize: ");
-  uart_int(obj_alloc->objsize);
-  uart_puts("\nobj_per_page: ");
-  uart_int(obj_alloc->obj_per_page);
-  uart_puts("\nobj_used: ");
-  uart_int(obj_alloc->obj_used);
-  if (obj_alloc->curr != NULL) {
-    uart_puts("\nobj_alloc->curr->phy_addr: ");
-    uart_hex(obj_alloc->curr->phy_addr);
-    uart_puts("\nobj_alloc->curr->free: ");
-    uart_hex(obj_alloc->curr->free);
-    uart_puts("\nobj_alloc->curr->obj_used: ");
-    uart_hex(obj_alloc->curr->obj_used);
-    uart_puts("\nobj_alloc->curr->pfn: ");
-    uart_int(obj_alloc->curr->pfn);
-  } else {
-    uart_puts("\ncurr is now NULL");
-  }
-  struct list_head *pos;
-  // Dump full list
-  uart_puts("\nFull list ");
-  list_for_each(pos, (struct list_head *)&obj_alloc->full) {
-    uart_puts("-> [");
-    uart_int(((struct page *)pos)->pfn);
-    uart_puts("] ");
-  }
-  // Dump Partial list
-  uart_puts("\nPartial list ");
-  list_for_each(pos, (struct list_head *)&obj_alloc->partial) {
-    uart_puts("-> [");
-    uart_int(((struct page *)pos)->pfn);
-    uart_puts("] ");
-  }
-  // Dump Empty list
-  uart_puts("\nEmpty list ");
-  list_for_each(pos, (struct list_head *)&obj_alloc->empty) {
-    uart_puts("-> [");
-    uart_int(((struct page *)pos)->pfn);
-    uart_puts("] ");
-  }
-  uart_puts("\n-----------END-----------\n");
-}
+#ifdef __DEBUG
+void dump_obj_alloc(obj_allocator_t *obj_allocator_p)
+{
+    printf("\n---------Object Allocator Debug---------\n");
+    printf("objsize = %d\n", obj_allocator_p->objsize);
+    printf("obj_per_page = %d\n", obj_allocator_p->obj_per_page);
+    printf("obj_used = %d\n", obj_allocator_p->obj_used);
+    printf("page_used = %d\n", obj_allocator_p->page_used);
 
-// Below for reserved memory
-
-void mem_reserved_init() {
-  for (int i = 0; i < MAX_MEM_RESERVED; i++) {
-    mem_reserved[i].is_reserved = 0;
-    mem_reserved[i].start = 0x0;
-    mem_reserved[i].offset = 0x0;
-  }
-}
-
-void put_memory_reserve(unsigned start, unsigned end) {
-  int i = 0;
-
-  for (i; i < MAX_MEM_RESERVED; i++) {
-    if (mem_reserved[i].is_reserved == 0)
-      break;
-  }
-
-  mem_reserved[i].is_reserved = 1;
-  mem_reserved[i].start = start - (start % 0x40000);
-  mem_reserved[i].offset = (end - start);
-}
-
-struct page *reserve_memory_block(reserved_t *reserved) {
-  int order = round_up_to_order(reserved->offset);
-  uart_puts("\nA reserve a page with order ");
-  uart_int(order);
-  struct list_head *curr = free_area[MAX_ORDER].free_list.next;
-  while (((page_t *)curr)->phy_addr != reserved->start) {
-    curr = curr->next;
-  }
-  uart_puts(" at start point: ");
-  uart_hex(((page_t *)curr)->phy_addr);
-  uart_puts("\n");
-
-  struct page *target = (page_t *)curr;
-
-  for (int j = MAX_ORDER; j > order; j--) {
-    int downward_buddy_pfn = FIND_BUDDY_PFN(target->pfn, j - 1);
-    // uart_puts("\nDownward buddy pfn: ");
-    // uart_int(downward_buddy_pfn);
-    struct page *downward_buddy = &pageframe[downward_buddy_pfn];
-    push2free(downward_buddy, &free_area[j - 1], j - 1);
-    // uart_puts("\nSplitted into 2 chunks in order: ");
-    // uart_int(j-1);
-  }
-
-  uart_puts("Finally puts chunk in memory:");
-  uart_hex(target->phy_addr);
-  uart_puts("\n");
-  // dump_free_area();
-  return target;
-}
-
-void apply_memory_reserve() {
-  for (int i = 0; i < MAX_MEM_RESERVED; i++) {
-    if (mem_reserved[i].is_reserved == 0)
-      break;
-    else
-      reserve_memory_block(&mem_reserved[i]);
-  }
-}
-
-int round_up_to_order(int page_num) {
-  int ret = 0;
-  page_num = ((page_num >> PAGE_SHIFT_BIT) - 1);
-  if (page_num < 0)
-    return 0;
-  ;
-  while (1) {
-    if (page_num == 0)
-      break;
+    
+    printf("\nobject_allocator->curr_page current page info:\n");
+    if (obj_allocator_p->curr_page != NULL) {
+        printf("obj_allocator_p->curr_page = {0x%x}\n", obj_allocator_p->curr_page->phy_addr);
+        printf("obj free list point to {0x%x}\n", obj_allocator_p->curr_page->free);
+        printf("obj_used = %d\n", obj_allocator_p->curr_page->obj_used);
+        printf("pfn = %d\n", obj_allocator_p->curr_page->pfn);
+        
+    }
     else {
-      page_num = page_num >> 1;
-      ret += 1;
+        printf("object_allocator->curr_page is NULL currently\n");
     }
-  }
-  return ret;
+    printf("\n");
+
+    struct list_head *pos;
+    printf("object_allocator->full list:\n");
+    list_for_each(pos, (struct list_head *) &obj_allocator_p->full) {
+        printf("--> {pfn(%d)}", ((struct page*) pos)->pfn);
+    }
+    printf("\n");
+
+    printf("object_allocator->partial list:\n");
+    list_for_each(pos, (struct list_head *) &obj_allocator_p->partial) {
+        printf("--> {pfn(%d)}", ((struct page*) pos)->pfn);
+    }
+    printf("\n");
+
+    printf("object_allocator->empty list:\n");
+    list_for_each(pos, (struct list_head *) &obj_allocator_p->empty) {
+        printf("--> {pfn(%d)}", ((struct page*) pos)->pfn);
+    }
+
+    printf("\n---------End Object Allocator Debug---------\n\n");
+
+}
+#endif
+
+void __init_kmalloc()
+{
+    for (int i = MIN_KMALLOC_ORDER;i <= MAX_KMALLOC_ODER;i++) {
+        register_obj_allocator(1 << i);
+    }
 }
 
-void dump_mem_reserved() {
-  for (int i = 0; i < MAX_MEM_RESERVED; i++) {
-    uart_puts("Index: ");
-    uart_int(i);
-    uart_puts("\tis_reserved: ");
-    uart_int(mem_reserved[i].is_reserved);
-    uart_puts("\tStart: ");
-    uart_hex(mem_reserved[i].start);
-    uart_puts("\tOffset: ");
-    uart_hex(mem_reserved[i].offset);
-    uart_puts("\n");
-  }
+void *kmalloc(int size)
+{
+    #ifdef __DEBUG
+    printf("[kmalloc] Requested Size: %d\n", size);
+    #endif //__DEBUG
+
+    void *allocated_addr;
+
+    // Object allocator
+    for (int i = MIN_KMALLOC_ORDER;i <= MAX_KMALLOC_ODER;i++) {
+        if (size <= (1<<i)) {
+            allocated_addr = obj_allocate(i - MIN_KMALLOC_ORDER);
+
+            #ifdef __DEBUG
+            printf("[kmlloc] Allocated address: 0x%x\n", allocated_addr);
+            printf("[kmlloc] **Done**\n\n");
+            #endif //__DEBUG
+
+            return allocated_addr;
+        }
+    }
+    // Buddy Memory allocator
+    for (int i = 0;i <= MAX_ORDER;i++) {
+        if (size <= 1<<(i + PAGE_SHIFT)) {
+            allocated_addr = (void *) buddy_block_alloc(i)->phy_addr;
+
+            #ifdef __DEBUG
+            printf("[kmlloc] Allocated address: 0x%x\n", allocated_addr);
+            printf("[kmlloc] **Done**\n\n");
+            #endif //__DEBUG
+
+            return allocated_addr;
+        }
+    }
+    
+    printf("[kmalloc] %d Bytes too large!\n", size);
+    return NULL;
 }
 
-// Below for simple malloc from lab2: very simple and useless
-// With fragmentation, not possible to free
+void kfree(void *addr) 
+{
+    #ifdef __DEBUG
+    printf("[kfree] Free Memory Address: 0x%x\n", addr);
+    #endif //__DEBUG
 
-void simple_malloc_demo() {
-  void *memory = (void *)0x98000;
-  uart_puts("A simple heap starts at 0x98000, which follows the text section.");
-  char *mac = simple_malloc(&memory, 8);
-  uart_puts("8 bytes allocated, starts from: \n");
-  uart_hex((unsigned int)mac);
-  uart_puts("\n");
-  mac = simple_malloc(&memory, 34);
-  uart_puts("34 bytes  bytes allocated, starts from: \n");
-  uart_hex((unsigned int)mac);
-  uart_puts("\n");
-  mac = simple_malloc(&memory, 3);
-  uart_puts("3 bytes  bytes allocated, starts from: \n");
-  uart_hex((unsigned int)mac);
-  uart_puts("\n");
+    int pfn = PHY_ADDR_TO_PFN(addr);
+    page_t *page_p = &bookkeep[pfn];
+
+    if (page_p->obj_alloc != NULL) {
+        // Belongs to Object Allocator
+        obj_free(addr);
+    } else {
+        // Belongs to Buddy Memory Allocator
+        buddy_block_free(page_p);
+    }
+
+    #ifdef __DEBUG
+    printf("[kfree] **Done**\n\n");
+    #endif //__DEBUG
 }
 
-void *simple_malloc(void **now, int size) {
-  void *ret = *now;
-  *now = *(char **)now + size;
-  return ret;
+void mm_init()
+{
+    page_init();
+    free_area_init();
+    __init_kmalloc();
+    
+    /**
+     *  Test Buddy memory Allocator
+     */
+    int allocate_test1[] = {1};
+    int test1_size = sizeof(allocate_test1) / sizeof(int);
+    page_t *(one_pages[test1_size]);
+    for (int i = 0;i < test1_size;i++) {
+        page_t *one_page = buddy_block_alloc(allocate_test1[i]); // Allocate one page frame
+        //printf("\n Allocated Block{ pfn(%d), order(%d), phy_addr_16(0x%x) }: %u\n", one_page->pfn, one_page->order, one_page->phy_addr);
+        one_pages[i] = one_page;
+    }
+    buddy_block_free(one_pages[0]);
+
+    /**
+     *  Test object allcator
+     */
+    // int token = register_obj_allocator(2000);
+    // void *addr1 = obj_allocate(token); // page frame 0
+    // void *addr2  = obj_allocate(token);
+    
+    // void *addr3 = obj_allocate(token); // 1
+    // void *addr4 = obj_allocate(token);
+
+    // void *addr5 = obj_allocate(token); // 2
+    // void *addr6 = obj_allocate(token);
+
+    // void *addr7 = obj_allocate(token); // 3
+    // void *addr11 = obj_allocate(token);
+
+    // void *addr12 = obj_allocate(token); // 4
+    // void *addr13 = obj_allocate(token);
+    // obj_free(addr1);
+    // obj_free(addr2);
+    // void *addr14 = obj_allocate(token); // 0
+    // void *addr15 = obj_allocate(token);__init_kmalloc();
+    // obj_free(addr11);
+    // obj_free(addr5);
+    // obj_free(addr15);
+    // obj_free(addr3);
+
+    // void *addr17 = obj_allocate(token); // 5
+    // void *addr18 = obj_allocate(token); // 3
+    
+    
+    /* Test Dynamic Memory Allocator */
+    // __init_kmalloc();
+    // // Test case 1
+    // void *k_addr1 = kmalloc(16);
+    // void *k_addr2 = kmalloc(48);
+    // kfree(k_addr1);
+    // void *k_addr3 = kmalloc(2048);
+    // void *k_addr4 = kmalloc(2048);
+    // void *k_addr5 = kmalloc(8787);
+    // kfree(k_addr3);
+    // kfree(k_addr4);
+    // kfree(k_addr5);
+    // Test case 2
+    // void *address_1 = kmalloc(16);
+    // void *address_2 = kmalloc(64);
+    // kfree(address_1);
+    // void *address_3 = kmalloc(1024);
+    // kfree(address_2);
+    // kfree(address_3);
+    // void *address_4 = kmalloc(16);
+    // void *address_9 = kmalloc(16384);
+    // void *address_10 = kmalloc(16384);
+    // kfree(address_4);
+    // void *address_5 = kmalloc(32);
+    // void *address_6 = kmalloc(32);
+    // kfree(address_5);
+    // kfree(address_6);
+    // void *address_7 = kmalloc(512);
+    // void *address_8 = kmalloc(512);
+    // kfree(address_8);
+    // kfree(address_7);
+    // kfree(address_9);
+    // kfree(address_10);
+    // void *address_11 = kmalloc(8192);
+    // void *address_12 = kmalloc(65536);
+    // void *address_13 = kmalloc(128);
+    // kfree(address_11);
+    // void *address_14 = kmalloc(65536);
+    // kfree(address_13);
+    // kfree(address_12);
+    // kfree(address_14);
+    // void *address_15 = kmalloc(256);
+    // kfree(address_15);
 }

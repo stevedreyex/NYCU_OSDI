@@ -1,4 +1,3 @@
-// Refrence from @Yunyung
 // The implementation of file is subset of list.h in Linux Kernel
 #ifndef _LIST_H
 #define _LIST_H

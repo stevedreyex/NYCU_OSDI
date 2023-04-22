@@ -1,180 +1,156 @@
+#include "shell.h"
+#include "string.h"
+#include "command.h"
+#include "uart.h"
 #include "cpio.h"
-#include "dtb.h"
-#include "mini_uart.h"
+#include "printf.h"
 #include "mm.h"
-#include "peripherals/mailbox.h"
-#include "utils.h"
-#define MAX_CMD 64
+#include "exception.h"
 
-#define ARR_SIZE(ARR) (sizeof(ARR) / sizeof(ARR[0]))
-typedef void (*handler_t)();
+extern int uart_read_idx;
+extern char UART_READ_BUFFER[MAX_BUFFER_LEN];
+extern int uart_transmit_idx;
+extern char UART_TRANSMIT_BUFFER[MAX_BUFFER_LEN];
+void shell_start () 
+{
+    int buffer_counter = 0;
+    char input_char;
+    char buffer[MAX_BUFFER_LEN];
+    enum SPECIAL_CHARACTER input_parse;
 
-void hello_service() { uart_puts("Hello World!\n"); }
+    strset (buffer, 0, MAX_BUFFER_LEN);   
+    // enable irq 
+    enable_irq_persist();
 
-void reboot_service() { reset(10); }
+    // enable mini uart read/write asynchronous interrupt 
+    enable_uart_interrupt();
 
-void mailbox_service() { mbox_call(MBOX_CH_PROP); }
+    // new line head
+    uart_puts("# ");
 
-void ls_service() { initrd_list(); }
+    // read input
+    while(1)
+    {
+        input_char = read_transmit_asynchronous_procoessing(buffer, &buffer_counter);
+        
+        input_parse = parse ( input_char );
 
-void cat_service() { cat_list(); }
-
-void lshw_service() { dtb_list(); }
-
-void initramfs_service() { print_initramfs(); }
-
-void prog_service() { exec_prog(load_prog("usr.img")); }
-
-void async_service() {
-  uart_puts("Asynchronous IO Starts, Please Type:");
-  uart_puts("\n$ ");
-
-  // testing, if success interrupt, then this will halt
-  char cmd[MAX_CMD];
-  buf_clear(cmd, MAX_CMD);
-  enable_mini_uart_interrupt();
-  uart_async_getc(cmd, 16);
-  delay(1);
-  uart_async_send(cmd, 16);
-  return 1;
-}
-
-void buddy_service() { buddy_init(); }
-
-void dyn_service() { dyn_init(); }
-
-void simp_malloc_service() { simple_malloc_demo(); }
-
-void help_service() {
-  uart_puts("help:\t\tprint this help menu\n");
-  uart_puts("hello:\t\tprint Hello World!\n");
-  uart_puts("mailbox:\tMailbox address and size\n");
-  uart_puts("ls:\t\tshow the directory\n");
-  uart_puts("cat:\t\ttshow file content\n");
-  uart_puts("lshw:\t\tshow hardware resuorces\n");
-  uart_puts("reboot:\t\treboot the device\n");
-  uart_puts("prog:\t\trun a user program\n");
-  uart_puts("async_io:\tStarts a Read by Interrupt\n");
-  uart_puts("buddy:\t\tDemo Buddy System[1, 2, 1, 1, 3]\n");
-  uart_puts("dyn:\t\tDemo Dynamic Allocator (size: 2000)\n");
-  uart_puts("simp_malloc:\tsimple malloc on heap\n");
-  uart_puts("timer:\tenable core timer\n");
-  uart_puts("test:\ttest functionality slot\n");
-  uart_puts("set[msg][sec]:\tshow the message after n seconds\n");
-}
-
-void enable_timer_service() {
-  core_timer_enable();
-  uart_puts("Core Timer is now enabled!\n");
-}
-
-void test_service() { asm volatile("svc 1"); }
-
-void set_handler(char * cmd){
-	// ignore the "set" and parse the string
-	int index = 4;
-	char * string[MAX_CMD];
-	char * sec[MAX_CMD];
-	while(cmd[index] != ' '){
-		index++;
-	}
-	strncpy(string, cmd+4, index-4);
-	index++;
-	strcpy(sec, cmd+index);
-	// uart_int(atoi(sec));
-}
-
-unsigned int parse_cmd(char *cmd) {
-  struct {
-    char *name;
-    handler_t handler;
-  } commands[] = {{.name = "help", .handler = help_service},
-                  {.name = "hello", .handler = hello_service},
-                  {.name = "reboot", .handler = reboot_service},
-                  {.name = "mailbox", .handler = mailbox_service},
-                  {.name = "ls", .handler = ls_service},
-                  {.name = "cat", .handler = cat_service},
-                  {.name = "lshw", .handler = lshw_service},
-                  {.name = "initramfs", .handler = initramfs_service},
-                  {.name = "prog", .handler = prog_service},
-                  {.name = "async", .handler = async_service},
-                  {.name = "buddy", .handler = buddy_service},
-                  {.name = "dyn", .handler = dyn_service},
-                  {.name = "simp_malloc", .handler = simp_malloc_service},
-                  {.name = "timer", .handler = enable_timer_service},
-                  {.name = "test", .handler = test_service}};
-  if(!memcmp(cmd, "set", 3)){
-	  set_handler(cmd);
-	return;
-  }
-  for (int i = 0; i < ARR_SIZE(commands); i++) {
-    if (str_comp(cmd, commands[i].name)) {
-      commands[i].handler();
-      break;
+        command_controller ( input_parse, input_char, buffer, &buffer_counter);
     }
-  }
-  buf_clear(cmd, MAX_CMD);
 }
 
-void shell_input(char *cmd) {
-  int idx = 0;
-  char c;
-  while ((c = uart_getc()) != '\n') {
-    /*TODO BS*/
-    // if(c == 8 && idx > 0){
-    //     cmd[--idx] = '\0';
-    //     uart_send('\b');
-    //     uart_send('\b');
-    // }
-    // else {
-    uart_send(c);
-    cmd[idx] = c;
-    idx++;
-    // }
-  }
-  uart_puts("\n");
+char read_transmit_asynchronous_procoessing(char buffer[], int * buffer_counter)
+{
+    while (1)
+    {
+        // There are not processing chars in read buffer
+        if (uart_read_idx > 0)
+        {
+            /** 
+             * Read one char at the front of read buffer
+             * Should it be a crtical section? 
+             * Because the variables in this critical section may be modified in uart IRQ hanlder at the same time
+             
+             */
+            //printf("buffer_counter = %d, uart_read_idx = %d\n", *buffer_counter, uart_read_idx);
+            disable_irq(); // critical section
+            char input_char = UART_READ_BUFFER[uart_read_idx - 1];
+            uart_read_idx--;
+            enable_irq(); // End critical section
+
+            /** 
+             * Write to the tail end of transmit buffer
+             * Also, it should be ciritical section. Because it's shared variables in shell.c and uart.c
+             * 
+             */
+            disable_irq(); // critical section 
+            UART_TRANSMIT_BUFFER[uart_transmit_idx] = input_char;
+            uart_transmit_idx++;
+            enable_irq(); // End critical section
+
+            enable_uart_transmit_interrupt(); // enable transmit interrupt to print on screen
+            
+            return input_char;
+        }
+
+        // ToDo : 
+        // Busy Waiting for printing all chars remaining in transmit buffer to avoid concurrency(race condition) problem. 
+        // Because it's possible when doing printf() function then transmit exception occur causing 
+        // race condiion?? 
+        // (It's race condition possible happen? Maybe not. But processor is too strong, so it's difficult to check that)
+        // For safe problem in future, we still add busy waitng code 
+        while (uart_transmit_idx != 0);
+    }
 }
 
-int str_comp(char *x, char *y) {
-  for (int i = 0; x[i] != '\0'; i++) {
-    if (x[i] != y[i])
-      return 0;
-  }
-  return 1;
+enum SPECIAL_CHARACTER parse ( char c )
+{
+    if (c == BACK_SPACE) // back space '\177'
+        return BACK_SPACE;
+        
+    if ( !(c < 128 && c >= 0) )
+        return UNKNOWN;
+
+    if ( c == LINE_FEED || c == CARRIAGE_RETURN )
+        return NEW_LINE;
+    else
+        return REGULAR_INPUT;    
 }
 
-void exception_entry() {
-  unsigned long spsrel1, elrel1, esrel1;
-  asm volatile("mrs %0, SPSR_EL1" : "=r"(spsrel1));
-  uart_puts("SPSR_EL1: 0x");
-  uart_hexlong(spsrel1);
-  uart_puts("\n");
-  asm volatile("mrs %0, ELR_EL1" : "=r"(elrel1));
-  uart_puts("ELR_EL1: 0x");
-  uart_hexlong(elrel1);
-  uart_puts("\n");
-  asm volatile("mrs %0, ESR_EL1" : "=r"(esrel1));
-  uart_puts("ESR_EL1: 0x");
-  uart_hexlong(esrel1);
-  uart_puts("\n");
-}
+void command_controller ( enum SPECIAL_CHARACTER input_parse, char c, char buffer[], int * counter )
+{
+    if ( input_parse == UNKNOWN )
+        return;
+    
+    // Special key
+    if ( input_parse == BACK_SPACE )
+    {
+        if (  (*counter) > 0 ) {
+            (*counter) --;
+            uart_puts("\b \b");
+        }
+    }
+    else if ( input_parse == NEW_LINE )
+    {
+        //uart_send(c);
+        
+        if ( (*counter) == MAX_BUFFER_LEN ) 
+        {
+            input_buffer_overflow_message(buffer);
+        }
+        else 
+        {
+            buffer[(*counter)] = '\0';
 
-void print_core_timer(unsigned long frq, unsigned long cnt) {
-  uart_puts("Core timer: ");
-  uart_ulong(cnt / frq);
-  uart_puts("\n");
-}
+            if      ( !strcmp(buffer, "help"        ) ) command_help();
+            else if ( !strcmp(buffer, "hello"       ) ) command_hello();
+            else if ( !strcmp(buffer, "timestamp"   ) ) command_timestamp();
+            else if ( !strcmp(buffer, "reboot"      ) ) command_reboot();
+            else if ( !strcmp(buffer, "ls"          ) ) command_cpio_ls((void *) INITRAMFS_ADDR);
+            else if ( !strncmp(buffer, "cat ", 3    ) ) command_getCpioFile((void *) INITRAMFS_ADDR, buffer + 4);
+            else if ( !strcmp(buffer, "ma"          ) ) mm_init();
+            else if ( !strcmp(buffer, "cpio_svc"    ) ) command_cpio_svc(); // eret jump to cpio assemlby file(user program), and svc return to kernel
+            else if ( !strcmp(buffer, "currentEL"   ) ) command_current_el();
+            else if ( !strcmp(buffer, "coreTimerOn" ) ) commnad_coreTimerOn();
+            else if ( !strcmp(buffer, "coreTimerOff") ) commnad_coreTimerOff();
+            else if ( !strncmp(buffer, "setTimeout ", 10)) coomand_setTimeout(buffer + 11);
+            else                                        command_not_found(buffer);
+        }
 
-void exec_prog(char *addr) {
-  uart_hex(addr);
-  uart_puts("\n");
-  // Holds the saved process state when an exception is taken to EL0
-  asm volatile("mov x0, 0");
-  asm volatile("msr spsr_el1, x0");
-  // Set the user program start address
-  asm volatile("msr elr_el1, %0" : : "r"(addr));
-  // Set user prog stack at
-  asm volatile("mov x0, 0x60000");
-  asm volatile("msr sp_el0, x0");
-  asm volatile("eret");
+        // reset Command buffer
+        (*counter) = 0;
+        strset (buffer, 0, MAX_BUFFER_LEN); 
+
+        // new line head;
+        uart_puts("# ");
+    }
+    else if ( input_parse == REGULAR_INPUT )
+    {
+        //uart_send(c);
+        if ( *counter < MAX_BUFFER_LEN)
+        {
+            buffer[*counter] = c;
+            (*counter) ++;
+        }
+    }
 }
