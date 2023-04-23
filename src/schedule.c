@@ -74,12 +74,12 @@ void switch_to(struct task_struct * next, int index){
 void exit_process(){
 	preempt_disable();
 	curr->state = TASK_ZOMBIE;
+	dump_task_state();
 	// Free the process stack
 	if(curr->stack){
 		kfree((void *)curr->stack);
 	}
 	preempt_enable();
-	dump_task_state();
 	schedule();
 }
 
