@@ -135,6 +135,10 @@ void __init_kmalloc();
 void *kmalloc(int size);
 void kfree(void *addr) ;
 
+void memzero(unsigned long src, unsigned long n);
+void memcpy(unsigned long dst, unsigned long src, unsigned long n);
+
+
 /**
  *  mm_init - Initialize system of memory management 
  */

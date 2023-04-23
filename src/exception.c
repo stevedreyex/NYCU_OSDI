@@ -2,6 +2,7 @@
 #include "entry.h"
 #include "timer.h"
 #include "exception.h"
+#include "entry.h"
 #include "uart.h"
 
 extern int isTimerMultiplexingEventIRQ;

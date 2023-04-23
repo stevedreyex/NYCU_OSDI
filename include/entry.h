@@ -23,5 +23,14 @@
 #define FIQ_INVALID_EL0_32      14 
 #define ERROR_INVALID_EL0_32    15 
 
+#ifndef __ASSEMBLER__
+extern void enable_irq_persist();
+extern void disable_irq_persist();
+extern void enable_irq();
+extern void disable_irq();
+extern void enable_interrupt();
+extern void disable_interrupt();
+extern void ret_from_fork();
 
+#endif
 #endif
