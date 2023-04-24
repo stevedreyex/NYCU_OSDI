@@ -19,5 +19,5 @@ typedef unsigned int size_t;
 #define NULL ((void *)0)
 #endif
 
-#endif
+#endif /* __ASSEMBLER__ */
 #endif

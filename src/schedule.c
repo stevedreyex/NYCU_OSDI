@@ -26,6 +26,7 @@ void schedule(){
 }
 
 void _schedule(){
+	// printf("[schedule] Schedule activated:\n");
 	preempt_disable();
 	// printf("Now Scheduling\n");
 	int next, c;
@@ -36,7 +37,9 @@ void _schedule(){
 		// Find task to switch to
 		for(int i = 0; i < NR_TASKS; i++){
 			p = task[i];
+			if(!p) continue;
 			// Choose the task with bigger counter
+			printf("p at: %x, p->state: %d, %d > %d\n", p, p->state, p->counter, c);
 			if (p && p->state == TASK_RUNNING && p->counter > c) {
 				c = p->counter;
 				next = i;
@@ -67,7 +70,7 @@ void switch_to(struct task_struct * next, int index){
 	if(curr == next) return;
 	struct task_struct * prev = curr;
 	curr = next;
-	// printf("Switch from %d to %d!\n", prev->pid, next->pid);
+	printf("Switch from %d to %d!\n", prev->pid, next->pid);
 	cpu_switch_to(prev, next);
 }
 
@@ -85,6 +88,7 @@ void exit_process(){
 
 
 void dump_task_state() {
+	printf("--------TSK--------\n");
  	for (int i = 0;i < nr_tasks;i++) {
  		printf("Task %d, %d: ", i, task[i]->state);
 
@@ -103,4 +107,5 @@ void dump_task_state() {
  		}
  		printf("\n");
  	} 
+	printf("--------END--------\n");
  }

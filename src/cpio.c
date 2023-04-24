@@ -145,5 +145,13 @@ void cpio_ls(void *archive) {
     }
 }
 
-
+void * cpio_move_file(void * archive, const char name){
+	unsigned long fileSize = 5920; // Magic Number
+	char * result = cpio_get_file(archive, name, &fileSize);
+	char * target_addr = (char *)0x10A0000;
+	for(int i = 0; i < fileSize; i++){
+		*(target_addr + i) = *(result + i);
+	}
+	return target_addr;
+}
 

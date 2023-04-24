@@ -1,7 +1,9 @@
 #include "entry.h"
+#include "sys.h"
+#include "sysregs.h"
 
-.macro handle_invalid_entry type
-	kernel_entry
+.macro handle_invalid_entry el, type
+	kernel_entry \el
 	mov	x0, #\type
 	mrs	x1, esr_el1
 	mrs	x2, elr_el1
@@ -14,7 +16,7 @@
 	b	\label
 .endm
 
-.macro	kernel_entry
+.macro	kernel_entry el
 	sub	sp, sp, #S_FRAME_SIZE
 	stp	x0, x1, [sp, #16 * 0]
 	stp	x2, x3, [sp, #16 * 1]
@@ -31,10 +33,31 @@
 	stp	x24, x25, [sp, #16 * 12]
 	stp	x26, x27, [sp, #16 * 13]
 	stp	x28, x29, [sp, #16 * 14]
-	str	x30, [sp, #16 * 15] 
+
+	.if		\el==0
+	mrs	x21, sp_el0
+	.else
+	add	x21, sp, #S_FRAME_SIZE
+	.endif
+
+	mrs	x22, elr_el1
+	mrs	x23, spsr_el1
+
+	stp	x30, x21, [sp, #16 *15]
+	stp	x22, x23, [sp, #16 *16]
 .endm
 
-.macro	kernel_exit
+.macro	kernel_exit el
+	ldp	x22, x23, [sp, #16 *16]
+	ldp	x30, x21, [sp, #16 *15]
+	
+	.if		\el==0
+	msr sp_el0, x21
+	.endif
+
+	msr elr_el1, x22
+	msr spsr_el1, x23
+
 	ldp	x0, x1, [sp, #16 * 0]
 	ldp	x2, x3, [sp, #16 * 1]
 	ldp	x4, x5, [sp, #16 * 2]
@@ -52,6 +75,7 @@
 	ldp	x28, x29, [sp, #16 * 14]
 	ldr	x30, [sp, #16 * 15] 
 	add	sp, sp, #S_FRAME_SIZE
+	eret
 .endm
 
 /*
@@ -67,13 +91,13 @@ exception_vector_table:
 	ventry	error_invalid_el1t			// Error EL1t
 
 	// Current EL with SPx
-	ventry	sync_exc_handler			// Synchronous EL1h
+	ventry	el1_sync_exc_handler		// Synchronous EL1h
 	ventry	irq_exc_handler				// IRQ EL1h
 	ventry	fiq_invalid_el1h			// FIQ EL1h
 	ventry	error_invalid_el1h			// Error EL1h
 
 	// Lower EL using AArch64
-	ventry	sync_exc_handler			// Synchronous 64-bit EL0
+	ventry	el0_sync_exc_handler		// Synchronous 64-bit EL0
 	ventry	irq_exc_handler				// IRQ 64-bit EL0
 	ventry	fiq_invalid_el0_64			// FIQ 64-bit EL0
 	ventry	error_invalid_el0_64		// Error 64-bit EL0
@@ -86,65 +110,118 @@ exception_vector_table:
 
 /* Invalid expcetion handler*/
 sync_invalid_el1t:
-	handle_invalid_entry  SYNC_INVALID_EL1t
+	handle_invalid_entry 1,  SYNC_INVALID_EL1t
 
 irq_invalid_el1t:
-	handle_invalid_entry  IRQ_INVALID_EL1t
+	handle_invalid_entry 1,  IRQ_INVALID_EL1t
 
 fiq_invalid_el1t:
-	handle_invalid_entry  FIQ_INVALID_EL1t
+	handle_invalid_entry 1,  FIQ_INVALID_EL1t
 
 error_invalid_el1t:
-	handle_invalid_entry  ERROR_INVALID_EL1t
+	handle_invalid_entry 1,  ERROR_INVALID_EL1t
 
 sync_invalid_el1h:
-	handle_invalid_entry  SYNC_INVALID_EL1h
+	handle_invalid_entry 1,  SYNC_INVALID_EL1h
 
 fiq_invalid_el1h:
-	handle_invalid_entry  FIQ_INVALID_EL1h
+	handle_invalid_entry 1,  FIQ_INVALID_EL1h
 
 error_invalid_el1h:
-	handle_invalid_entry  ERROR_INVALID_EL1h
+	handle_invalid_entry 1,  ERROR_INVALID_EL1h
 
 sync_invalid_el0_64:
-	handle_invalid_entry  SYNC_INVALID_EL0_64
+	handle_invalid_entry 0,  SYNC_INVALID_EL0_64
 
 irq_invalid_el0_64:
-	handle_invalid_entry  IRQ_INVALID_EL0_64
+	handle_invalid_entry 0,  IRQ_INVALID_EL0_64
 
 fiq_invalid_el0_64:
-	handle_invalid_entry  FIQ_INVALID_EL0_64
+	handle_invalid_entry 0,  FIQ_INVALID_EL0_64
 
 error_invalid_el0_64:
-	handle_invalid_entry  ERROR_INVALID_EL0_64
+	handle_invalid_entry 0,  ERROR_INVALID_EL0_64
 
 sync_invalid_el0_32:
-	handle_invalid_entry  SYNC_INVALID_EL0_32
+	handle_invalid_entry 0,  SYNC_INVALID_EL0_32
 
 irq_invalid_el0_32:
-	handle_invalid_entry  IRQ_INVALID_EL0_32
+	handle_invalid_entry 0,  IRQ_INVALID_EL0_32
 
 fiq_invalid_el0_32:
-	handle_invalid_entry  FIQ_INVALID_EL0_32
+	handle_invalid_entry 0,  FIQ_INVALID_EL0_32
 
 error_invalid_el0_32:
-	handle_invalid_entry  ERROR_INVALID_EL0_32
+	handle_invalid_entry 0,  ERROR_INVALID_EL0_32
 
-/* Synchronous and IRQ handler */
-sync_exc_handler:
-	kernel_entry
-	mrs	x0, spsr_el1
-	mrs	x1, elr_el1
-	mrs	x2, esr_el1 
-	bl sync_exc_router
-    kernel_exit // restore saved process state
+el1_sync_exc_handler:
+	kernel_entry 1
+	mrs x25, esr_el1
+	lsr x24, x25, #ESR_ELx_EC_SHIFT
+	cmp x24, #ESR_ELx_EC_SVC64
+	b.eq el1_svc
+	handle_invalid_entry 1, SYNC_ERROR
 
-	eret // return to original program counter that exception occur
+sc_nr	.req x25 // number of system call
+scno	.req x26 // system call number
+stbl	.req x27 // system call table
+
+el1_svc:
+	adr stbl, sys_call_table
+	uxtw	scno, w8	// unsigned hex to word
+	mov		sc_nr, #__NR_SYSCALLS
+	bl		enable_irq
+	cmp		scno, sc_nr
+	b.hs	el1_ni_sys	// if syscall number in w8 exceed limit then handle as error
+	
+	ldr		x16, [stbl, scno, lsl #3]	// addr in syscall table (sys.c)
+	blr		x16
+	bl		el1_ret_from_syscall
+
+el1_ni_sys:
+	handle_invalid_entry 1, SYSCALL_ERROR
+
+el1_ret_from_syscall:
+	bl		disable_irq
+	str		x0, [sp, #S_X0]
+	kernel_exit 0
+
+el0_sync_exc_handler:
+	kernel_entry 0
+	mrs x25, esr_el1
+	lsr x24, x25, #ESR_ELx_EC_SHIFT
+	cmp x24, #ESR_ELx_EC_SVC64
+	b.eq el0_svc
+	handle_invalid_entry 0, SYNC_ERROR
+
+sc_nr	.req x25 // number of system call
+scno	.req x26 // system call number
+stbl	.req x27 // system call table
+
+el0_svc:
+	adr stbl, sys_call_table
+	uxtw	scno, w8	// unsigned hex to word
+	mov		sc_nr, #__NR_SYSCALLS
+	bl		enable_irq
+	cmp		scno, sc_nr
+	b.hs	el0_ni_sys	// if syscall number in w8 exceed limit then handle as error
+	
+	ldr		x16, [stbl, scno, lsl #3]	// addr in syscall table (sys.c)
+	blr		x16
+	bl		el0_ret_from_syscall
+
+el0_ni_sys:
+	handle_invalid_entry 1, SYSCALL_ERROR
+
+el0_ret_from_syscall:
+	bl		disable_irq
+	str		x0, [sp, #S_X0]
+	kernel_exit 0
 
 irq_exc_handler:
-	kernel_entry
+	kernel_entry 0
 	bl  irq_exc_router
-	kernel_exit
+	kernel_exit 0
 	eret
 
 .globl enable_irq_persist
@@ -194,8 +271,15 @@ disable_interrupt:
 .globl err_hang
 err_hang: b err_hang
 
+
 .global ret_from_fork
 ret_from_fork:
 	bl schedule_tail
-	mov x0, x20
+	// if "move_to_user_mode" then branch taken (x19=0)
+	cbz x19, ret_to_usr // x19 store fn
+	mov x0, x20			// x20 store args
 	blr x19
+
+ret_to_usr:
+	bl disable_irq
+	kernel_exit 0
