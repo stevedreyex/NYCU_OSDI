@@ -1,6 +1,7 @@
 #include "schedule.h"
 #include "entry.h"
 #include "printf.h"
+#include "fork.h"
 #include "mm.h"
 
 static struct task_struct init_task = INIT_TASK;
@@ -26,7 +27,7 @@ void schedule(){
 }
 
 void _schedule(){
-	// printf("[schedule] Schedule activated:\n");
+	printf("[schedule] Schedule activated:\n");
 	preempt_disable();
 	// printf("Now Scheduling\n");
 	int next, c;
@@ -39,7 +40,7 @@ void _schedule(){
 			p = task[i];
 			if(!p) continue;
 			// Choose the task with bigger counter
-			printf("p at: %x, p->state: %d, %d > %d\n", p, p->state, p->counter, c);
+			printf("p at: %x, %d > %d\n", p, p->counter, c);
 			if (p && p->state == TASK_RUNNING && p->counter > c) {
 				c = p->counter;
 				next = i;
@@ -61,7 +62,6 @@ void _schedule(){
 			if(p) p->counter = (p->counter >> 1) + p->priority;
 		}
 	}
-	printf("curr:%d, next:%d\n", c, next);
 	switch_to(task[next], next);
 	preempt_enable();
 }
@@ -106,6 +106,11 @@ void dump_task_state() {
  			printf("Unknown State");
  		}
  		printf("\n");
+		struct pt_regs * temp = (struct pt_regs *)task[i]->stack;
+		// printf("user/kernel\tcounter\tpriority\tpreempt\t|| stack:\tsp\tpc\tpstate\n");
+		// printf("%d\t\t%d\t%d\t\t%d\t\t\t%d\t%d\t%d\n", task[i]->flags, task[i]->counter, task[i]->priority, task[i]->preempt_count, temp->sp, temp->pc, temp->pstate);
+		// printf("fp\tlr\tsp\n");
+		// printf("%x\t%x\t%x\n", task[i]->cpu_context.fp, task[i]->cpu_context.lr, task[i]->cpu_context.sp);
  	} 
 	printf("--------END--------\n");
  }

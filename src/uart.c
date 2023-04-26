@@ -28,6 +28,7 @@
 #include "base.h"
 #include "exception.h"
 #include "printf.h"
+#include "mailbox.h"
 
 int uart_read_idx, uart_transmit_idx;
 char UART_READ_BUFFER[MAX_BUFFER_LEN], UART_TRANSMIT_BUFFER[MAX_BUFFER_LEN];
@@ -229,3 +230,17 @@ void putc ( void* p, char c)
 {
 	uart_send(c);
 }
+
+int mailbox_call(unsigned char ch, unsigned int *mbox)
+{
+    unsigned int r = (((unsigned int)((unsigned long)&mbox)&~0xF) | (ch&0xF));
+    do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
+    *MBOX_WRITE = r;
+    while(1) {
+        do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_EMPTY);
+		if(r == *MBOX_READ) return mbox[1] == MBOX_RESPONSE;
+	}
+	return 0;
+}
+
+

@@ -98,7 +98,4 @@ void *cpio_get_file(void *archive, const char *name, unsigned long *size);
  */
 void cpio_ls(void *archive);
 
-void * cpio_move_file(void * archive, const char name);
-
-
 #endif /* _LIB_CPIO_H_ */

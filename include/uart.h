@@ -81,4 +81,5 @@ void enable_uart_read_interrupt();
  */
 void uart_irq_handler();
 
+int mailbox_call(unsigned char ch, unsigned int *mbox);
 #endif

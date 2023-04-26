@@ -206,6 +206,7 @@ el0_svc:
 	cmp		scno, sc_nr
 	b.hs	el0_ni_sys	// if syscall number in w8 exceed limit then handle as error
 	
+	// stbl + scno * 8
 	ldr		x16, [stbl, scno, lsl #3]	// addr in syscall table (sys.c)
 	blr		x16
 	bl		el0_ret_from_syscall

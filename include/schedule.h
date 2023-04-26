@@ -41,8 +41,9 @@ struct cpu_context {
 };
 
 /**
- * @stack: For User
- * @flags: 1 For User/2 For kernel
+ * @stack:	For User
+ * @flags:  1 For User/2 For kernel
+ * @pstate: Exception Level Setup
  */
 struct task_struct {
 	struct cpu_context cpu_context;

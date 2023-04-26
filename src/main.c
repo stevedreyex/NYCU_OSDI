@@ -30,43 +30,57 @@ void user_proc_test_syscall_write(){
  	// call_sys_write("[user_process]User process started\n");
 }
 
+// 1
 void user_proc_test_syscall_getPid(){
      /* Test syscall getPID */
     printf("[user_getPID] Test syscall getpid\n");
-    int current_pid = call_sys_getPID();
+    int current_pid = getpid();
 	printf("[user_getPID] Current Pid = %d\n", current_pid);
+    delay(1000000);
+	schedule();
 	exit_process();
 }
 
+// 3
 void user_proc_test_syscall_uart_write(){
 	/* Test syscall uart_write*/
+	int size = 0;
     printf("[uart_write] Test syscall uart_write\n");
-    // int size = call_sys_uart_write("[uart_write] syscall test\n", 26);
-    // printf("[uart_write] How many byte written = %d\n", size);
+    size = uartwrite("[uart_write] syscall test\n", 26);
+    printf("[uart_write] How many byte written = %d\n", size);
+    delay(2000000);
+	schedule();
+	exit_process();
 }
 
+// 2
 void user_proc_test_syscall_uart_read(){
+	int size;
 	printf("[uart_read] Test syscall uart_read\n");
     char uart_read_buf[20];
     printf("[uart_read] Enter your input: ");
-    // size = call_sys_uart_read(uart_read_buf, 4);
-    // printf("\n[uart_read] Read buf = %s, How many byte read = %d\n", uart_read_buf, size);
+    size = uartread(uart_read_buf, 4);
+    printf("\n[uart_read] Read buf = %s, How many byte read = %d\n", uart_read_buf, size);
+    delay(2000000);
+	schedule();
+	exit_process();
 }
 
-void user_proc_test_syscall_malloc(){
-	/* Test syscall malloc */
-    printf("[malloc] Test syscall malloc\n");
-    // void *malloc_return = call_sys_malloc(PAGE_SIZE);
-    // printf("[malloc] Allocated starting address of page = 0x%x\n", malloc_return);
-}
-
+// 4+5
 void user_proc_test_syscall_args(){
 	/* Test syscall exec with argument passing */
     char* argv[] = {"argv_test", "-o", "arg2", 0};
-    // call_sys_exec(exec_argv_test, argv);
+    exec("syscall.img", argv);
 	// printf("[exit] Task%d exit\n", call_sys_getPID());
  	// call_sys_exit();
+	delay(2000000);
+	schedule();
+	exit_process();
+
 }
+
+// 6: mbox
+// 7: kill
 
 /*
  * End of a bunch of tests
@@ -75,9 +89,13 @@ void user_proc_test_syscall_args(){
 
 void kernel_proc(){
 	printf("[kernel_proc] Kernel Process at EL%d\n", get_el());
-	int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_getPid);
+	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_getPid);
+	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_uart_read);
+	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_uart_write);
+	int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_args);
 	if(err < 0) printf("Erorr with handle kernel process\n");
-	printf("[kernel_proc] End of Kernel\n");
+	printf("[kernel_proc] End of function\n");
+	schedule();
 }
 
 int main()

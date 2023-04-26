@@ -46,10 +46,12 @@ int copy_process(unsigned long flags, unsigned long fn, unsigned long arg, unsig
 	p->state =TASK_RUNNING;
 	p->preempt_count = 1;
 	// "ret_to_fork" will use x19 and x20
+	// *** Here is the most critical part ***
+	// Stack registers contains pc, and it points to the usr process
 	p->cpu_context.lr = (unsigned long)ret_from_fork;
 	p->cpu_context.sp = (unsigned long)child_regs;
 
-	int pid = nr_tasks++;
+	int pid = assignPID();
 	printf("Process %d is about to execute %x", pid, p->cpu_context.x19);
 	task[pid] = p;
 	task[pid]->pid = pid;
@@ -79,4 +81,14 @@ struct pt_regs * task_pt_regs(struct task_struct * task){
 	// The next thread size, a.k.a. the next page(size)
 	unsigned long p = (unsigned long)task + THREAD_SIZE - sizeof(struct pt_regs);
 	return (struct pt_regs *)p;
+}
+
+int assignPID(){
+	for (long i = 0; i < NR_TASKS; i++){
+		if (task[i] == NULL) {
+			nr_tasks++;
+			return i;
+		}
+	}
+	return -1;
 }
