@@ -233,13 +233,19 @@ void putc ( void* p, char c)
 
 int mailbox_call(unsigned char ch, unsigned int *mbox)
 {
-    unsigned int r = (((unsigned int)((unsigned long)&mbox)&~0xF) | (ch&0xF));
-    do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_FULL);
-    *MBOX_WRITE = r;
-    while(1) {
-        do{asm volatile("nop");}while(*MBOX_STATUS & MBOX_EMPTY);
-		if(r == *MBOX_READ) return mbox[1] == MBOX_RESPONSE;
-	}
+	// printf("Debug: %x, %x, %x, %x\n", mbox[0], mbox[1], mbox[2], mbox[3]);
+	unsigned int r = ((unsigned int)(((unsigned int)mbox & ~0xf) | (ch & 0xf)));
+
+	while (*MBOX_STATUS & MBOX_FULL) asm volatile("nop");
+
+	*MBOX_WRITE = r;
+
+	while (1) {
+		while (*MBOX_STATUS & MBOX_EMPTY) asm volatile("nop");
+
+		if (r == *MBOX_READ)
+			return mbox[1] == MBOX_RESPONSE;
+		}
 	return 0;
 }
 
