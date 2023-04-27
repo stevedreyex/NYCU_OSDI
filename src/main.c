@@ -80,7 +80,35 @@ void user_proc_test_syscall_args(){
 
 }
 
-// 
+// 4
+void user_proc_test_syscall_fork(){
+	printf("\nFork Test, pid %d\n", get_pid());
+    int cnt = 1;
+    int ret = 0;
+    if ((ret = fork()) == 0) { // child
+        long long cur_sp;
+        asm volatile("mov %0, sp" : "=r"(cur_sp));
+        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", get_pid(), cnt, &cnt, cur_sp);
+        ++cnt;
+
+        if ((ret = fork()) != 0){
+            asm volatile("mov %0, sp" : "=r"(cur_sp));
+            printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", get_pid(), cnt, &cnt, cur_sp);
+        }
+        else{
+            while (cnt < 5) {
+                asm volatile("mov %0, sp" : "=r"(cur_sp));
+                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", get_pid(), cnt, &cnt, cur_sp);
+                delay(1000000);
+                ++cnt;
+            }
+        }
+        exit();
+    }
+    else {
+        printf("parent here, pid %d, child %d\n", get_pid(), ret);
+    }
+}
 
 // 6: mbox
 void user_proc_test_syscall_mailbox(){
@@ -115,8 +143,9 @@ void kernel_proc(){
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_uart_read);		// 1
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_uart_write);		// 2
 	int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_args);			// 3
+	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_fork);				// 4
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_mailbox);			// 6																						
-	if(err < 0) printf("Erorr with handle kernel process\n");
+	if(err < 0) printf("Error with handle kernel process\n");
 	printf("[kernel_proc] End of function\n");
 	schedule();
 }
