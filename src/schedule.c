@@ -40,7 +40,7 @@ void _schedule(){
 			p = task[i];
 			if(!p) continue;
 			// Choose the task with bigger counter
-			printf("p at: %x, %d > %d\n", p, p->counter, c);
+			// printf("p at: %x, %d > %d\n", p, p->counter, c);
 			if (p && p->state == TASK_RUNNING && p->counter > c) {
 				c = p->counter;
 				next = i;

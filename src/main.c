@@ -31,7 +31,7 @@ void user_proc_test_syscall_write(){
  	// call_sys_write("[user_process]User process started\n");
 }
 
-// 1
+// 0
 void user_proc_test_syscall_getPid(){
      /* Test syscall getPID */
     printf("[user_getPID] Test syscall getpid\n");
@@ -42,7 +42,7 @@ void user_proc_test_syscall_getPid(){
 	exit_process();
 }
 
-// 3
+// 2
 void user_proc_test_syscall_uart_write(){
 	/* Test syscall uart_write*/
 	int size = 0;
@@ -54,7 +54,7 @@ void user_proc_test_syscall_uart_write(){
 	exit_process();
 }
 
-// 2
+// 1
 void user_proc_test_syscall_uart_read(){
 	int size;
 	printf("[uart_read] Test syscall uart_read\n");
@@ -67,7 +67,7 @@ void user_proc_test_syscall_uart_read(){
 	exit_process();
 }
 
-// 4+5
+// 3
 void user_proc_test_syscall_args(){
 	/* Test syscall exec with argument passing */
     char* argv[] = {"argv_test", "-o", "arg2", 0};

@@ -6,6 +6,7 @@
 #include "printf.h"
 #include "types.h"
 
+// Create PCB
 int copy_process(unsigned long flags, unsigned long fn, unsigned long arg, unsigned long stack){
 	printf("Dump all tasks before copy:\n");
 	dump_task_state();
@@ -27,14 +28,21 @@ int copy_process(unsigned long flags, unsigned long fn, unsigned long arg, unsig
 		// if function is wrapped by "move_to_user_mode", then fn is 0
 		p->cpu_context.x19 = fn;
 		p->cpu_context.x20 = arg;
+
+		// Kernel process has no user stack
+		p->stack = (unsigned long) NULL;
 	} else {
-		printf("Copy to User Thread\n");
+		// printf("Copy to User Thread\n");
 		// Clone a User Thread
 		// Page Table and stack of child and stack put to the next Page
+		// * curr is the source to fork, p is the new fork-to process
+		// * curr_regs is the source pt_regs, and child_regs is the new stack pointer
 		struct pt_regs * curr_regs = task_pt_regs(curr);
 		*child_regs = *curr_regs;
 		child_regs->regs[0] = 0; // Distinguish from parent
 		child_regs->sp = stack + PAGE_SIZE;
+		// user process fork has user stack
+		// "fork" will pass stack = new [page] to reach stack
 		p->stack = stack;
 	}
 
@@ -52,7 +60,7 @@ int copy_process(unsigned long flags, unsigned long fn, unsigned long arg, unsig
 	p->cpu_context.sp = (unsigned long)child_regs;
 
 	int pid = assignPID();
-	printf("Process %d is about to execute %x", pid, p->cpu_context.x19);
+	// printf("Process %d is about to execute %x", pid, p->cpu_context.x19);
 	task[pid] = p;
 	task[pid]->pid = pid;
 
@@ -62,6 +70,8 @@ int copy_process(unsigned long flags, unsigned long fn, unsigned long arg, unsig
 
 int move_to_user_mode(unsigned long pc){
 	printf("[move_to_user_mode] Now excute %x\n", pc);
+	// move the current process from kernel mode to user mode
+	// a kernel process has no user stack, so we have to initialize it.
 	struct pt_regs * regs = task_pt_regs(curr);
 	memzero(regs, sizeof(struct pt_regs));
 	regs->pc = pc;
@@ -74,6 +84,7 @@ int move_to_user_mode(unsigned long pc){
 	curr->stack = stack;
 	return 0;
 }
+
 /*
  * Based pm the current execution, gives you another pair of registers
  */
