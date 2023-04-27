@@ -62,6 +62,7 @@ int sys_exec(const char *name, char *const argv[]){
 	}
 	regs->sp = curr->stack + PAGE_SIZE;
 	regs->sp = regs->sp - ((argc_count + argc_count % 2) * 8);
+	// Write to the actual stack pointer with aligned address space
 	char **temp = (char**)regs->sp;
 	for(int i = 0; i < argc_count; i++){
 		*(temp + i) = *(backup + i);
@@ -72,8 +73,8 @@ int sys_exec(const char *name, char *const argv[]){
 	regs->regs[1] = (unsigned long)regs->sp;
 
 	preempt_enable();
-
 	return argc_count;
+
 }
 
 int sys_fork(){
@@ -102,11 +103,18 @@ void sys_exit(int status){
 }									// 5
 
 int sys_mbox_call(unsigned char ch, unsigned int *mbox){
-	mailbox_call(ch, mbox);
+	return mailbox_call(ch, mbox);
 }	// 6
 
 void sys_kill(int pid){
-	task[pid] = NULL;
+	if (curr->pid == pid){
+		printf("[sys_kill] You can't suicide! Please just exit first!");
+		return;
+	}
+	else {
+		task[pid] = NULL;
+		nr_tasks--;
+	}
 }										// 7
 
 
