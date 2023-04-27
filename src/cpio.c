@@ -122,8 +122,12 @@ void *cpio_get_file(void *archive, const char *name, unsigned long *size)
 
         if (error)
             return NULL;
-        if (cpio_strncmp(current_filename, name, -1) == 0) 
-            return result;
+        // if (cpio_strncmp(current_filename, name, -1) == 0) 
+		//	  printf("[cpio_get_file] The size is %x\n", *size);
+        //    return result;
+		if (!strcmp(current_filename, name)){
+			return result;
+		}
         header = next;
     }
 }
