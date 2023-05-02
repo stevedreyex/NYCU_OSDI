@@ -34,6 +34,7 @@ void user_proc_test_syscall_write(){
 // 0
 void user_proc_test_syscall_getPid(){
      /* Test syscall getPID */
+    delay(20000000);
     printf("[user_getPID] Test syscall getpid\n");
     int current_pid = getpid();
 	printf("[user_getPID] Current Pid = %d\n", current_pid);
@@ -149,7 +150,7 @@ void kernel_proc(){
 	if(err < 0) printf("Error with handle kernel process\n");
 	printf("[kernel_proc] End of function\n");
 	// schedule();
-    exit_process();
+    // exit_process();
 }
 
 void idle(){
@@ -173,7 +174,7 @@ int main()
 	enable_irq();
 	printf("IRQ enabled\n");
     core_timer_enable();
-
+/*
     // start shell
     // shell_start();
 	for(int i = 0; i < 2; ++i) { // N should bigger than 2
@@ -184,14 +185,14 @@ int main()
  		}
 		printf("Thread %d successfully created!", i);
      }
+*/
 
-/*
 	int res = copy_process(PF_KTHREAD, (unsigned long)&kernel_proc, 0, 0);
  	if (res < 0) {
  		printf("error while starting kernel process");
  		return 0;
  	}
-*/
+
  	while (1) {
         // idle();
  		// printf("Idle()\n");

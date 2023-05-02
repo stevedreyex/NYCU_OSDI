@@ -20,6 +20,7 @@ core_timer_enable:
     mrs x0, cntfrq_el0
     mov x1, 1
     mul x0, x0, x1
+    asr x0, x0, 4
     msr cntp_tval_el0, x0           // set expired time
     
     mov x0, 2
@@ -46,8 +47,9 @@ core_timer_disable:
 .global core_timer_handler
 core_timer_handler:
     mrs x0, cntfrq_el0
-    mov x1, 5
+    mov x1, 1
     mul x0, x0, x1
+    asr x0, x0, 4
     msr cntp_tval_el0, x0
     ret
 
