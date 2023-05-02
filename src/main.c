@@ -37,9 +37,9 @@ void user_proc_test_syscall_getPid(){
     printf("[user_getPID] Test syscall getpid\n");
     int current_pid = getpid();
 	printf("[user_getPID] Current Pid = %d\n", current_pid);
-    delay(1000000);
-	schedule();
-	exit_process();
+    // delay(1000000);
+	// schedule();
+	// exit_process();
 }
 
 // 2
@@ -50,8 +50,8 @@ void user_proc_test_syscall_uart_write(){
     size = uartwrite("[uart_write] syscall test\n", 26);
     printf("[uart_write] How many byte written = %d\n", size);
     delay(2000000);
-	schedule();
-	exit_process();
+	// schedule();
+	// exit_process();
 }
 
 // 1
@@ -63,8 +63,8 @@ void user_proc_test_syscall_uart_read(){
     size = uartread(uart_read_buf, 4);
     printf("\n[uart_read] Read buf = %s, How many byte read = %d\n", uart_read_buf, size);
     delay(2000000);
-	schedule();
-	exit_process();
+	// schedule();
+	// exit_process();
 }
 
 // 3
@@ -75,38 +75,38 @@ void user_proc_test_syscall_args(){
 	// printf("[exit] Task%d exit\n", call_sys_getPID());
  	// call_sys_exit();
 	delay(2000000);
-	schedule();
-	exit_process();
+	// schedule();
+	// exit_process();
 
 }
 
 // 4
 void user_proc_test_syscall_fork(){
-	printf("\nFork Test, pid %d\n", get_pid());
+	printf("\nFork Test, pid %d\n", getpid());
     int cnt = 1;
     int ret = 0;
     if ((ret = fork()) == 0) { // child
         long long cur_sp;
         asm volatile("mov %0, sp" : "=r"(cur_sp));
-        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", get_pid(), cnt, &cnt, cur_sp);
+        printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
         ++cnt;
 
         if ((ret = fork()) != 0){
             asm volatile("mov %0, sp" : "=r"(cur_sp));
-            printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", get_pid(), cnt, &cnt, cur_sp);
+            printf("first child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
         }
         else{
             while (cnt < 5) {
                 asm volatile("mov %0, sp" : "=r"(cur_sp));
-                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", get_pid(), cnt, &cnt, cur_sp);
+                printf("second child pid: %d, cnt: %d, ptr: %x, sp : %x\n", getpid(), cnt, &cnt, cur_sp);
                 delay(1000000);
                 ++cnt;
             }
         }
-        exit();
+        exit(-1);
     }
     else {
-        printf("parent here, pid %d, child %d\n", get_pid(), ret);
+        printf("parent here, pid %d, child %d\n", getpid(), ret);
     }
 }
 
@@ -126,8 +126,8 @@ void user_proc_test_syscall_mailbox(){
 	mbox_call(MBOX_CH_PROP, mbox);
 	printf("[mailbox] the board's revision is %x\n", mbox[5]);
 	delay(2000000);
-	schedule();
-	exit_process();
+	// schedule();
+	// exit_process(); 
 }
 
 // 7: kill
@@ -139,15 +139,21 @@ void user_proc_test_syscall_mailbox(){
 
 void kernel_proc(){
 	printf("[kernel_proc] Kernel Process at EL%d\n", get_el());
-	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_getPid);			// 0
+    delay(20000000);
+	int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_getPid);			// 0
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_uart_read);		// 1
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_uart_write);		// 2
-	int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_args);			// 3
+	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_args);			// 3
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_fork);				// 4
 	// int err = move_to_user_mode((unsigned long)&user_proc_test_syscall_mailbox);			// 6																						
 	if(err < 0) printf("Error with handle kernel process\n");
 	printf("[kernel_proc] End of function\n");
-	schedule();
+	// schedule();
+    exit_process();
+}
+
+void idle(){
+    while (1) printf("Idle()\n");
 }
 
 int main()
@@ -166,8 +172,8 @@ int main()
 	// IRQ
 	enable_irq();
 	printf("IRQ enabled\n");
+    core_timer_enable();
 
-/*
     // start shell
     // shell_start();
 	for(int i = 0; i < 2; ++i) { // N should bigger than 2
@@ -178,20 +184,21 @@ int main()
  		}
 		printf("Thread %d successfully created!", i);
      }
-*/
 
+/*
 	int res = copy_process(PF_KTHREAD, (unsigned long)&kernel_proc, 0, 0);
  	if (res < 0) {
  		printf("error while starting kernel process");
  		return 0;
  	}
-
+*/
  	while (1) {
- 		printf("\nIn kernel main()\n\n");
-		dump_task_state();
+        // idle();
+ 		// printf("Idle()\n");
+		// dump_task_state();
  		kill_zombies(); // reclaim threads marked as DEAD
- 		schedule();
-        delay(10000000);
+ 		// schedule();
+        // delay(10000000);
      }
 
     return 0;

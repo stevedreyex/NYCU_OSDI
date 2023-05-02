@@ -70,11 +70,12 @@ void switch_to(struct task_struct * next, int index){
 	if(curr == next) return;
 	struct task_struct * prev = curr;
 	curr = next;
-	printf("Switch from %d to %d!\n", prev->pid, next->pid);
+	printf("[switch_to] Switch from %d to %d!\n", prev->pid, next->pid);
 	cpu_switch_to(prev, next);
 }
 
 void exit_process(){
+	printf("[exit_process] Exit the process\n");
 	preempt_disable();
 	curr->state = TASK_ZOMBIE;
 	dump_task_state();
