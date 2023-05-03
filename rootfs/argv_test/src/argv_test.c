@@ -4,17 +4,19 @@
 
 int main(int argc, char **argv) 
 {
-    init_printf(0, putc);
+    // init_printf(0, putc);
 
-    printf("\n[exec_argv_test]Argv Test, pid %d\n", call_sys_gitPID());
-    for (int i = 0; i < argc; ++i) {
-        printf("%s\n", argv[i]);
-    }
+    // printf("\n[exec_argv_test]Argv Test, pid %d\n", getpid());
+    // for (int i = 0; i < argc; ++i) {
+    //     printf("%s\n", argv[i]);
+    // }
     
-    char *fork_argv[] = {"fork_test", 0};
-    call_sys_exec("fork_test", fork_argv);
+    uartwrite("Successfully\n", 14);
 
-    call_sys_exit(); // should never run
+    char *fork_argv[] = {"fork_test", 0};
+    exec("fork_test.img", fork_argv);
+
+    exit(); // should never run
 
     return 0;
 }

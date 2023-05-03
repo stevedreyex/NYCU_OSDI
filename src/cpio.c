@@ -119,6 +119,7 @@ void *cpio_get_file(void *archive, const char *name, unsigned long *size)
         int error = cpio_parse_header(header, &current_filename,
                 size, &result, &next);
 
+        printf("[cpiogetfile] Current at %s\n", current_filename);
         if (error)
             return NULL;
         if (cpio_strncmp(current_filename, name, -1) == 0) 

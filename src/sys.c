@@ -24,16 +24,22 @@ int sys_uart_write(char buf[], size_t size)
 
 int sys_uart_read(char buf[], size_t size) 
 {
-    preempt_disable();
+    // preempt_disable();
 
+    // for (int i = 0;i < size;i++) {
+    //     // block until uart_read ready
+    //     block_uart_read();
+    //     buf[i] = uart_getc();
+    // }
+    // buf[size] = '\0';
+
+    // preempt_enable();
+
+    // return size;
     for (int i = 0;i < size;i++) {
-        // block until uart_read ready
-        block_uart_read();
-        buf[i] = uart_getc();
+         buf[i] = uart_getc();
     }
     buf[size] = '\0';
-
-    preempt_enable();
 
     return size;
 }
@@ -74,17 +80,18 @@ int sys_exec(const char *name, char* const argv[])
     // concatenate filename and extension
     // Read cpio file and move target file in cpio to proper starting memory address
     // corresponding to definition of it's starting memory address in linker sciprt 
-    char filename_buf[30];
+    // char filename_buf[30];
     char extension[] = ".img";
     int i;
     unsigned long move_address = 0x10A0000;
-    for (i = 0;i < strlen((char *)name);i ++) {
-        filename_buf[i] = name[i];
-    }
-    for (int temp = i;i < strlen(extension) + temp;i++) {
-        filename_buf[i] = extension[i - temp];
-    }
-    void *target_addr = cpio_move_file((void *) INITRAMFS_ADDR, filename_buf, move_address);
+    // for (i = 0;i < strlen((char *)name);i ++) {
+    //     filename_buf[i] = name[i];
+    // }
+    // for (int temp = i;i < strlen(extension) + temp;i++) {
+    //     filename_buf[i] = extension[i - temp];
+    // }
+    printf("[exec] Try to find file %s\n", name);
+    void *target_addr = cpio_move_file((void *) INITRAMFS_ADDR, name, move_address);
     //void *target_addr = cpio_get_file((void *) INITRAMFS_ADDR, "fork_test.img", &unused); // why cause error?
     
     // count argv[] until terminated by a null pointer
@@ -146,8 +153,26 @@ void sys_coreTimer_off()
     printf("[Core timer] interrupt disabled\n");
 }
 
+int sys_mbox_call(unsigned char ch, unsigned int *mbox){
+	return mailbox_call(ch, mbox);
+}	// 6
+
+void sys_kill(int pid){
+	if (current->pid == pid){
+		printf("[sys_kill] You can't suicide! Please just exit first!");
+		return;
+	}
+	else {
+        kfree(task[pid]->stack);
+		task[pid] = NULL;
+		nr_tasks--;
+	}
+}	
+
 void * const sys_call_table[] = 
-    {sys_write, sys_uart_write, sys_uart_read, 
-     sys_gitPID, sys_fork, sys_exec, 
-     sys_exit, sys_malloc, sys_clone,
-     sys_coreTimer_on, sys_coreTimer_off};
+    // {sys_write, sys_uart_write, sys_uart_read, 
+    //  sys_gitPID, sys_fork, sys_exec, 
+    //  sys_exit, sys_malloc, sys_clone,
+    //  sys_coreTimer_on, sys_coreTimer_off};
+    {sys_gitPID, sys_uart_read, sys_uart_write, sys_exec, sys_fork, sys_exit, sys_mbox_call, sys_kill,
+    sys_malloc, sys_clone,sys_coreTimer_on, sys_coreTimer_off,sys_write};

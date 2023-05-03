@@ -1,6 +1,6 @@
 # Modify from 
 # https://github.com/s-matyukevich/raspberry-pi-os/blob/master/src/lesson01/Makefile
-ARMGNU ?= aarch64-linux-gnu
+ARMGNU ?= aarch64-none-elf
 COPS = -Wall -nostdlib  -ffreestanding -Iinclude #-nostartfiles #-D__DEBUG
 ASMOPS = -Iinclude 
 
@@ -10,7 +10,7 @@ SRC_DIR = src
 all : kernel8.img
 
 clean :
-	rm -rf $(BUILD_DIR) *.img 
+	rm -rf $(BUILD_DIR) ../cpio/*.img 
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	mkdir -p $(@D)
@@ -29,7 +29,7 @@ DEP_FILES = $(OBJ_FILES:%.o=%.d)
 
 kernel8.img: linker.ld $(OBJ_FILES)
 	$(ARMGNU)-ld -T linker.ld -o $(BUILD_DIR)/kernel8.elf  $(OBJ_FILES)
-	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary fork_test.img
+	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary ../cpio/fork_test.img
 
 run:
 	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio

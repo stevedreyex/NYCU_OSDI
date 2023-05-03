@@ -1,8 +1,8 @@
 # Modify from 
 # https://github.com/s-matyukevich/raspberry-pi-os/blob/master/src/lesson01/Makefile
-ARMGNU ?= aarch64-linux-gnu
+ARMGNU ?= aarch64-none-elf
 
-COPS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude #g-ggdb #-D__DEBUG
+COPS = -Wall -nostdlib -nostartfiles -ffreestanding -Iinclude -g #g-ggdb #-D__DEBUG
 ASMOPS = -Iinclude 
 
 BUILD_DIR = build
@@ -32,11 +32,17 @@ kernel8.img: linker.ld $(OBJ_FILES)
 	$(ARMGNU)-ld -T linker.ld -o $(BUILD_DIR)/kernel8.elf  $(OBJ_FILES)
 	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
 
-run:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio
+run_normal: kernel8.img
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio
 
-debug:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -initrd initramfs.cpio -serial null -display none -S -s 
+debug: kernel8.img
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -initrd initramfs.cpio -serial null -display none -S -s 
 
-run_cpio:
-	qemu-system-aarch64 -M raspi3 -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
+run: kernel8.img
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
+
+int: kernel8.img
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio -d int
+
+asm: kernel8.img
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio -d in_asm

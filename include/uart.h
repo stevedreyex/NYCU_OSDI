@@ -90,4 +90,5 @@ void shell_uart_irq_handler();
 void uart_read_irq_wakeUp_handler();
 void block_uart_read();
 int uart_read_status();
+int mailbox_call(unsigned char ch, unsigned int *mbox);
 #endif

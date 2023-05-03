@@ -29,6 +29,7 @@
 #include "exception.h"
 #include "printf.h"
 #include "wait.h"
+#include "mailbox.h"
 
 int uart_read_idx, uart_transmit_idx;
 char UART_READ_BUFFER[MAX_BUFFER_LEN], UART_TRANSMIT_BUFFER[MAX_BUFFER_LEN];
@@ -253,4 +254,22 @@ void uart_read_irq_wakeUp_handler()
     // wake up threads would not read from uart buffer immediate so disable
     // uart read interrupt is needed
     disable_uart_read_interrupt(); 
+}
+
+int mailbox_call(unsigned char ch, unsigned int *mbox)
+{
+	// printf("Debug: %x, %x, %x, %x\n", mbox[0], mbox[1], mbox[2], mbox[3]);
+	unsigned int r = ((unsigned int)(((unsigned int)mbox & ~0xf) | (ch & 0xf)));
+
+	while (*MBOX_STATUS & MBOX_FULL) asm volatile("nop");
+
+	*MBOX_WRITE = r;
+
+	while (1) {
+		while (*MBOX_STATUS & MBOX_EMPTY) asm volatile("nop");
+
+		if (r == *MBOX_READ)
+			return mbox[1] == MBOX_RESPONSE;
+		}
+	return 0;
 }

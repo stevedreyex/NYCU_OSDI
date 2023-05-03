@@ -5,24 +5,24 @@
 int main(void) {
     init_printf(0, putc);
     
-    printf("\n[fork_test]Fork Test, pid %d\n", call_sys_gitPID());
+    printf("\n[fork_test]Fork Test, pid %d\n", getpid());
     int cnt = 1;
     int ret = 0;
-    printf("pid: %d, cnt: %d, cnt_adress: 0x%x\n", call_sys_gitPID(), cnt, &cnt);
-    if ((ret = call_sys_fork()) == 0) { // child
-        printf("pid: %d, cnt: %d, cnt_adress: 0x%x\n", call_sys_gitPID(), cnt, &cnt);
+    printf("pid: %d, cnt: %d, cnt_adress: 0x%x\n", getpid(), cnt, &cnt);
+    if ((ret = fork()) == 0) { // child
+        printf("pid: %d, cnt: %d, cnt_adress: 0x%x\n", getpid(), cnt, &cnt);
         ++cnt;
-        call_sys_fork();
+        fork();
         while (cnt < 5) {
-            printf("pid: %d, cnt: %d, cnt_adress: 0x%x\n", call_sys_gitPID(), cnt, &cnt);
+            printf("pid: %d, cnt: %d, cnt_adress: 0x%x\n", getpid(), cnt, &cnt);
             for(int i = 0;i < 100000;i++);
             ++cnt;
         }
     } else {
-        printf("parent here, pid %d, child %d\n", call_sys_gitPID(), ret);
+        printf("parent here, pid %d, child %d\n", getpid(), ret);
     }
     // dumpTasksState();
-    printf("[exit] Task%d\n", call_sys_gitPID());
-    call_sys_exit();
+    printf("[exit] Task%d\n", getpid());
+    exit();
     return 0;
 }

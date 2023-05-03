@@ -28,12 +28,12 @@ void *sys_malloc(int bytes);
 int sys_clone();
 
 void call_sys_write(char * buf);
-int call_sys_uart_write(char buf[], size_t size);
-int call_sys_uart_read(char buf[], size_t size);
-int call_sys_gitPID();
-int call_sys_fork();
-int call_sys_exec(const char* name, char* const argv[]);
-void call_sys_exit();
+int uartwrite(char buf[], size_t size);
+int uartread(char buf[], size_t size);
+int getpid();
+int fork();
+int exec(const char* name, char* const argv[]);
+void exit();
 void *call_sys_malloc();
 
 #endif

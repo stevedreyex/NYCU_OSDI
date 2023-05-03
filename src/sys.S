@@ -6,41 +6,53 @@ call_sys_write:
     svc #0
     ret
 
-.globl call_sys_uart_write
-call_sys_uart_write:
+.globl uartwrite
+uartwrite:
     mov w8, #SYS_UARTWRITE_NUMBER
     svc #0
     ret
 
-.globl call_sys_uart_read
-call_sys_uart_read:
+.globl uartread
+uartread:
     mov w8, #SYS_UARTREAD_NUMBER
     svc #0
     ret
 
-.globl call_sys_gitPID
-call_sys_gitPID:
+.globl getpid
+getpid:
     mov w8, #SYS_GETPID_NUMBER
     svc #0
     ret
 
-.globl call_sys_fork
-call_sys_fork:
+.globl fork
+fork:
     mov w8, #SYS_FORK_NUMBER
     svc #0
     ret
 
-.globl call_sys_exec
-call_sys_exec:
+.globl exec
+exec:
     mov w8, #SYS_EXEC_NUMBER
     svc #0
     ret
 
-.globl call_sys_exit
-call_sys_exit:
+.globl exit
+exit:
     mov w8, #SYS_EXIT_NUMBER
     svc #0
     ret
+
+.global mbox_call
+mbox_call:
+	mov w8, SYS_MBOX_NUMBER
+	svc #0
+	ret
+
+.global kill
+kill:
+	mov w8, SYS_KILL_NUMBER
+	svc #0
+	ret
 
 .globl call_sys_malloc
 call_sys_malloc:
@@ -59,4 +71,5 @@ call_sys_coreTimer_off:
     mov w8, #SYS_CORETIMER_OFF
     svc #0
     ret
+
 
