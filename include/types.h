@@ -15,9 +15,11 @@ typedef unsigned long int uint64_t;
 
 typedef unsigned int size_t;
 
+typedef long pid_t; // task pid
+
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
 
-#endif
+#endif /* __ASSEMBLER__ */
 #endif

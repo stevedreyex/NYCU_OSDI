@@ -1,6 +1,5 @@
 #include <cpio.h>
 #include <printf.h>
-#include "string.h"
 
 /* Align 'n' up to the value 'align', which must be a power of two. */
 static unsigned long align_up(unsigned long n, unsigned long align)
@@ -122,12 +121,8 @@ void *cpio_get_file(void *archive, const char *name, unsigned long *size)
 
         if (error)
             return NULL;
-        // if (cpio_strncmp(current_filename, name, -1) == 0) 
-		//	  printf("[cpio_get_file] The size is %x\n", *size);
-        //    return result;
-		if (!strcmp(current_filename, name)){
-			return result;
-		}
+        if (cpio_strncmp(current_filename, name, -1) == 0) 
+            return result;
         header = next;
     }
 }
@@ -150,3 +145,19 @@ void cpio_ls(void *archive) {
     }
 }
 
+void *cpio_move_file(void *archive, const char *name, unsigned long move_addr)
+{
+    unsigned long fileSize = 5920;
+    char *result = cpio_get_file(archive, name, &fileSize);
+
+    char *target_addr = (char *)move_addr;
+    //printf("[cpio_move_file] Starting address of file in cpio: = 0x%x\n", result);
+    // printf("fileSize = %d\n", fileSize);
+
+    // copy file to proper address 
+    for (int i = 0;i < fileSize;i++) {
+        *(target_addr + i) = *(result + i);
+    }
+
+    return target_addr;
+}

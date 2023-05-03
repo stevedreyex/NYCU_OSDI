@@ -1,54 +1,62 @@
 #include "sys.h"
 
-// The w8 save the system call number
-// The arguments is at x0, x1, ..., they will be preserved
-// even if we enter the critical section
-// the args are saved and won't be replaced unless enter err_hang
+.globl call_sys_write
+call_sys_write:
+    mov w8, #SYS_WRITE_NUMBER
+    svc #0
+    ret
 
-.global getpid
-getpid:
-	mov w8, SYS_GETPID
-	svc #0
-	ret
+.globl call_sys_uart_write
+call_sys_uart_write:
+    mov w8, #SYS_UARTWRITE_NUMBER
+    svc #0
+    ret
 
-.global uartread
-uartread:
-	mov w8, SYS_READ
-	svc #0
-	ret
+.globl call_sys_uart_read
+call_sys_uart_read:
+    mov w8, #SYS_UARTREAD_NUMBER
+    svc #0
+    ret
 
-.global uartwrite
-uartwrite:
-	mov w8, SYS_WRITE
-	svc #0
-	ret
+.globl call_sys_gitPID
+call_sys_gitPID:
+    mov w8, #SYS_GETPID_NUMBER
+    svc #0
+    ret
 
-.global exec
-exec:
-	mov w8, SYS_EXEC
-	svc #0
-	ret
+.globl call_sys_fork
+call_sys_fork:
+    mov w8, #SYS_FORK_NUMBER
+    svc #0
+    ret
 
-.global fork
-fork:
-	mov w8, SYS_FORK
-	svc #0
-	ret
+.globl call_sys_exec
+call_sys_exec:
+    mov w8, #SYS_EXEC_NUMBER
+    svc #0
+    ret
 
-.global exit
-exit:
-	mov w8, SYS_EXIT
-	svc #0
-	ret
+.globl call_sys_exit
+call_sys_exit:
+    mov w8, #SYS_EXIT_NUMBER
+    svc #0
+    ret
 
-.global mbox_call
-mbox_call:
-	mov w8, SYS_MBOX
-	svc #0
-	ret
+.globl call_sys_malloc
+call_sys_malloc:
+    mov w8, #SYS_MALLOC_NUMBER
+    svc #0
+    ret
 
-.global kill
-kill:
-	mov w8, SYS_KILL
-	svc #0
-	ret
+.globl call_sys_coreTimer_on
+call_sys_coreTimer_on:
+    mov w8, #SYS_CORETIMER_On
+    svc #0
+    ret
+
+.globl call_sys_coreTimer_off
+call_sys_coreTimer_off:
+    mov w8, #SYS_CORETIMER_OFF
+    svc #0
+    ret
+
