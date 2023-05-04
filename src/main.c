@@ -82,7 +82,8 @@ void user_process(){
 
     /* Test syscall exec with argument passing */
     char* argv[] = {"argv_test", "-o", "arg2", 0};
-    exec("argv_test.img", argv);
+    // exec("argv_test.img", argv);
+    exec("fork_test.img", argv);
 
     /* syscall exit */
     printf("[exit] Task%d exit\n", getpid());
@@ -149,11 +150,11 @@ int main()
     }
     
     // Elevtive 1 - Wait Queue
-    res = copy_process(PF_KTHREAD, (unsigned long)&test_waitQueue_uart_read, 0, 0);
-    if (res < 0) {
-        printf("error while starting kernel process");
-        return 0;
-    }
+    // res = copy_process(PF_KTHREAD, (unsigned long)&test_waitQueue_uart_read, 0, 0);
+    // if (res < 0) {
+    //     printf("error while starting kernel process");
+    //     return 0;
+    // }
 
     while (1) {
         // printf("In kernel main()\n");
