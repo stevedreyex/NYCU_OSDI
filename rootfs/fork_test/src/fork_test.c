@@ -3,7 +3,7 @@
 #include "uart.h"
 
 int main(void) {
-    // init_printf(0, putc);
+    init_printf(0, putc);
     
     // printf("\n[fork_test]Fork Test, pid %d\n", getpid());
     uartwrite("\n[fork_test]Fork Test, pid", 27);
