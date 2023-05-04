@@ -41,6 +41,9 @@ debug: kernel8.img
 run: kernel8.img
 	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio
 
+display: kernel8.img
+	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -serial null -serial stdio -initrd initramfs.cpio
+
 int: kernel8.img
 	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -display none -serial null -serial stdio -initrd initramfs.cpio -d int
 

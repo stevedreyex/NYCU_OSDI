@@ -81,9 +81,9 @@ void user_process(){
     // printf("[malloc] Allocated starting address of page = 0x%x\n", malloc_return);
 
     /* Test syscall exec with argument passing */
-    char* argv[] = {"argv_test", "-o", "arg2", 0};
+    char* argv[] = {};
     // exec("argv_test.img", argv);
-    exec("fork_test.img", argv);
+    exec("syscall.img", argv);
 
     /* syscall exit */
     printf("[exit] Task%d exit\n", getpid());

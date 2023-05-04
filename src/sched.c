@@ -66,7 +66,7 @@ void switch_to(struct task_struct *next, int index)
 
     //printf("[switch_to] Tasks state before cotext switch:\n");
     //dumpTasksState();
-    printf("[switch_to] context switch! next scheduled - pid = %d\n", index);
+    // printf("[switch_to] context switch! next scheduled - pid = %d\n", index);
 
     struct task_struct *prev = current;
     current = next;
