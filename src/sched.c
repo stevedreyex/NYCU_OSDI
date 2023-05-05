@@ -47,7 +47,7 @@ void _schedule(void)
         }
     }
     
-    //printf("[_schedule] next scheduled - pid = %d\n", next);
+    printf("[_schedule] next scheduled - pid = %d\n", next);
     switch_to(task[next], next);
 
     preempt_enable();
