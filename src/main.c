@@ -157,11 +157,11 @@ int main()
     // }
     int i = 0;
     while (1) {
-        printf("In kernel main()\n");
-        dumpTasksState();
+        // printf("In kernel main()\n");
+        // dumpTasksState();
         kill_zombies(); // reclaim threads marked as DEAD
         delay(100000);
-        printf("Thread %d IDLE sec %d\n", current->pid,++i);
+        // printf("Thread %d IDLE sec %d\n", current->pid,++i);
         schedule();
     }
 
