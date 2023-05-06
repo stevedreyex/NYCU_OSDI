@@ -106,7 +106,7 @@ void irq_exc_router()
         }
         else {
             // printf("Core timer interrupt!, timestamp: %u, current thread pid = %u\n", get_system_time(), current->pid);
-            schedule();
+            // schedule();
             core_timer_handler();
             timer_tick(); // schedule 
             
