@@ -24,7 +24,7 @@ typedef long pid_t; // task pid
 #define TRUE 1
 #define FALSE 0
 
-#define EOF -1
+// #define EOF -1
 
 
 #endif /* __ASSEMBLER__ */

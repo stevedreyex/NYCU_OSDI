@@ -155,7 +155,7 @@ int main()
     //     printf("error while starting kernel process");
     //     return 0;
     // }
-    int i = 0;
+    // int i = 0;
     while (1) {
         // printf("In kernel main()\n");
         // dumpTasksState();
