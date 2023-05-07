@@ -21,11 +21,5 @@ typedef long pid_t; // task pid
 #define NULL ((void *)0)
 #endif
 
-#define TRUE 1
-#define FALSE 0
-
-// #define EOF -1
-
-
 #endif /* __ASSEMBLER__ */
 #endif

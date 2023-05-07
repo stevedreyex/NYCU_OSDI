@@ -70,7 +70,7 @@ void command_controller ( enum SPECIAL_CHARACTER input_parse, char c, char buffe
 
             if      ( !strcmp(buffer, "help"        ) ) command_help();
             else if ( !strcmp(buffer, "hello"       ) ) command_hello();
-            // else if ( !strcmp(buffer, "timestamp"   ) ) command_timestamp();
+            else if ( !strcmp(buffer, "timestamp"   ) ) command_timestamp();
             else if ( !strcmp(buffer, "reboot"      ) ) command_reboot();
             else if ( !strcmp(buffer, "loadKernel"  ) ) command_loadkernel();
             else                                        command_not_found(buffer);

@@ -4,14 +4,12 @@
 
 int main(int argc, char **argv) 
 {
-    init_printf(0, putc);
+    // init_printf(0, putc);
 
     // printf("\n[exec_argv_test]Argv Test, pid %d\n", getpid());
     // for (int i = 0; i < argc; ++i) {
     //     printf("%s\n", argv[i]);
     // }
-
-    printf("Init success\n");
     
     uartwrite("Successfully\n", 14);
 

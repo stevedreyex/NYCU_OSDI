@@ -159,16 +159,14 @@ int sys_mbox_call(unsigned char ch, unsigned int *mbox){
 
 void sys_kill(int pid){
 	if (current->pid == pid){
-		printf("[sys_kill] You can't suicide! Please just exit first!\n");
+		printf("[sys_kill] You can't suicide! Please just exit first!");
 		return;
 	}
 	else {
         kfree(task[pid]->stack);
-        kfree(task[pid]);
 		task[pid] = NULL;
 		nr_tasks--;
 	}
-    dumpTasksState();
 }	
 
 void * const sys_call_table[] = 

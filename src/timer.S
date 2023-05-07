@@ -17,13 +17,9 @@ core_timer_enable:
     mov x0, 1
     msr cntp_ctl_el0, x0            // enable
 
-    mrs x0, cntkctl_el1
-    orr x0, x0, 1
-    msr cntkctl_el1, x0
-
     mrs x0, cntfrq_el0
     mov x1, 5
-    asr x0, x0, x1
+    mul x0, x0, x1
     msr cntp_tval_el0, x0           // set expired time
     
     mov x0, 2
@@ -51,7 +47,7 @@ core_timer_disable:
 core_timer_handler:
     mrs x0, cntfrq_el0
     mov x1, 5
-    asr x0, x0, x1
+    mul x0, x0, x1
     msr cntp_tval_el0, x0
     ret
 
