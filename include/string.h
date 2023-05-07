@@ -9,5 +9,6 @@ void ftoa       ( float n, char* res, int afterpoint );
 int atoi (const char * str);
 void reverse    ( char *s );
 int strncmp(const char *str1, const char *str2, unsigned long n);
+int strcpy(char *dest, const char *src);
 
 #endif
