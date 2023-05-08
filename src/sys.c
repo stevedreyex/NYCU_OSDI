@@ -162,8 +162,12 @@ void sys_kill(int pid){
 		printf("[sys_kill] You can't suicide! Please just exit first!\n");
 		return;
 	}
+    else if (pid == 0){
+        printf("[sys_kill] You can't kill idle thread");
+    }
 	else {
-        kfree(task[pid]->stack);
+        if(task[pid]->flags = 0)
+            kfree(task[pid]->stack);
         kfree(task[pid]);
 		task[pid] = NULL;
 		nr_tasks--;

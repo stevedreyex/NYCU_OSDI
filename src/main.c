@@ -81,7 +81,7 @@ void user_process(){
     // printf("[malloc] Allocated starting address of page = 0x%x\n", malloc_return);
 
     /* Test syscall exec with argument passing */
-    char* argv[] = {};
+    char* argv[] = {0};
     // exec("argv_test.img", argv);
     exec("syscall.img", argv);
 
