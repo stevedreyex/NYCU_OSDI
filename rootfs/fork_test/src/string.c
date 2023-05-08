@@ -1,7 +1,6 @@
 #include "string.h"
-#include "math.h"
 
-int strcmp (const char * s1,const char * s2 )
+int strcmp ( char * s1, char * s2 )
 {
     /* 
     Returns 0 if str1 is same as str2. 
@@ -29,7 +28,7 @@ void strset (char * s1, int c, int size )
         s1[i] = c;
 }
 
-int strlen (const char * s )
+int strlen ( char * s )
 {
     int i = 0;
     while ( 1 )
@@ -60,31 +59,31 @@ void itoa (int x, char str[], int d)
     reverse(str); 
 } 
 
-// // https://www.geeksforgeeks.org/convert-floating-point-number-string/
-// void ftoa(float n, char* res, int afterpoint) 
-// { 
-//     // Extract integer part 
-//     int ipart = (int)n; 
+// https://www.geeksforgeeks.org/convert-floating-point-number-string/
+void ftoa(float n, char* res, int afterpoint) 
+{ 
+    // Extract integer part 
+    int ipart = (int)n; 
   
-//     // Extract floating part 
-//     float fpart = n - (float)ipart; 
+    // Extract floating part 
+    float fpart = n - (float)ipart; 
   
-//     // convert integer part to string 
-//     itoa(ipart, res, 0); 
-//     int i = strlen(res);
+    // convert integer part to string 
+    itoa(ipart, res, 0); 
+    int i = strlen(res);
   
-//     // check for display option after point 
-//     if (afterpoint != 0) { 
-//         res[i] = '.'; // add dot 
+    // check for display option after point 
+    if (afterpoint != 0) { 
+        res[i] = '.'; // add dot 
   
-//         // Get the value of fraction part upto given no. 
-//         // of points after dot. The third parameter  
-//         // is needed to handle cases like 233.007 
-//         fpart = fpart * pow(10, afterpoint); 
+        // Get the value of fraction part upto given no. 
+        // of points after dot. The third parameter  
+        // is needed to handle cases like 233.007 
+        fpart = fpart * pow(10, afterpoint); 
   
-//         itoa((int)fpart, res + i + 1, afterpoint); 
-//     } 
-// } 
+        itoa((int)fpart, res + i + 1, afterpoint); 
+    } 
+} 
 
 int atoi (const char * str) {
     int res = 0;
@@ -104,8 +103,8 @@ void reverse ( char * s )
     for ( i = 0; i < strlen(s) / 2; i++ ) 
     {
         temp = s[strlen(s) - i - 1];
-        s[strlen(s) - i - 1] = s[i];
-        s[i] = temp;
+        s[strlen(s) - i - 1] = s[0];
+        s[0] = temp;
     }
 }
 
@@ -123,12 +122,12 @@ int strncmp(const char *a, const char *b, unsigned long n)
     return 0;
 }
 
-int strcpy(char *dest, const char *src) {
-     int i = 0;
-     while (src[i] != '\0') {
-         dest[i] = src[i];
-         i++;
-     }
-     dest[i] = '\0';
-     return i;
- }
+int pow(int base, int exponent)
+{
+    int result = 1;
+    for ( ; exponent > 0; exponent--)
+    {
+        result = result * base;
+    }
+    return result;
+}

@@ -18,7 +18,7 @@ void command_help ()
     uart_puts("Valid Command:\n");
     uart_puts("\thelp:\t\tprint all available commands.\n");
     uart_puts("\thello:\t\tprint \"Hello World!\".\n");
-    uart_puts("\ttimestamp:\tget current timestamp.\n");
+    // uart_puts("\ttimestamp:\tget current timestamp.\n");
     uart_puts("\treboot:\t\treset rpi3.\n");
     uart_puts("\tloadKernel:\t\tload new kernel to 0x80000.\n");
     uart_puts("\n");
@@ -29,24 +29,24 @@ void command_hello ()
     uart_puts("Hello World!\n");
 }
 
-void command_timestamp ()
-{
-    unsigned long int cnt_freq, cnt_tpct;
-    char str[20];
+// void command_timestamp ()
+// {
+//     unsigned long int cnt_freq, cnt_tpct;
+//     char str[20];
 
-    asm volatile(
-        "mrs %0, cntfrq_el0 \n\t"
-        "mrs %1, cntpct_el0 \n\t"
-        : "=r" (cnt_freq),  "=r" (cnt_tpct)
-        :
-    );
+//     asm volatile(
+//         "mrs %0, cntfrq_el0 \n\t"
+//         "mrs %1, cntpct_el0 \n\t"
+//         : "=r" (cnt_freq),  "=r" (cnt_tpct)
+//         :
+//     );
 
-    ftoa( ((float)cnt_tpct) / cnt_freq, str, 6);
+//     ftoa( ((float)cnt_tpct) / cnt_freq, str, 6);
 
-    uart_send('[');
-    uart_puts(str);
-    uart_puts("]\n");
-}
+//     uart_send('[');
+//     uart_puts(str);
+//     uart_puts("]\n");
+// }
 
 void command_not_found (char * s) 
 {

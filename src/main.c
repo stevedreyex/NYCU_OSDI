@@ -81,8 +81,9 @@ void user_process(){
     // printf("[malloc] Allocated starting address of page = 0x%x\n", malloc_return);
 
     /* Test syscall exec with argument passing */
-    char* argv[] = {"argv_test", "-o", "arg2", 0};
-    exec("argv_test.img", argv);
+    char* argv[] = {};
+    // exec("argv_test.img", argv);
+    exec("syscall.img", argv);
 
     /* syscall exit */
     printf("[exit] Task%d exit\n", getpid());
@@ -149,18 +150,19 @@ int main()
     }
     
     // Elevtive 1 - Wait Queue
-    res = copy_process(PF_KTHREAD, (unsigned long)&test_waitQueue_uart_read, 0, 0);
-    if (res < 0) {
-        printf("error while starting kernel process");
-        return 0;
-    }
-
+    // res = copy_process(PF_KTHREAD, (unsigned long)&test_waitQueue_uart_read, 0, 0);
+    // if (res < 0) {
+    //     printf("error while starting kernel process");
+    //     return 0;
+    // }
+    // int i = 0;
     while (1) {
         // printf("In kernel main()\n");
         // dumpTasksState();
         kill_zombies(); // reclaim threads marked as DEAD
-        schedule();
         delay(100000);
+        // printf("Thread %d IDLE sec %d\n", current->pid,++i);
+        schedule();
     }
 
 

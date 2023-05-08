@@ -47,7 +47,7 @@ void _schedule(void)
         }
     }
     
-    //printf("[_schedule] next scheduled - pid = %d\n", next);
+    // printf("[_schedule] next scheduled - pid = %d\n", next);
     switch_to(task[next], next);
 
     preempt_enable();
@@ -66,7 +66,7 @@ void switch_to(struct task_struct *next, int index)
 
     //printf("[switch_to] Tasks state before cotext switch:\n");
     //dumpTasksState();
-    printf("[switch_to] context switch! next scheduled - pid = %d\n", index);
+    // printf("[switch_to] context switch! next scheduled - pid = %d\n", index);
 
     struct task_struct *prev = current;
     current = next;
@@ -122,8 +122,9 @@ void kill_zombies(void) {
 
 void dumpTasksState() {
     printf("=========Tasks state=========\n");
-    for (int i = 0;i < nr_tasks;i++) {
-        printf("Task %d: ", i);
+    for (int i = 0;i < NR_TASKS;i++) {
+        if(task[i] == NULL) continue;
+        printf("Task %d: ", task[i]->pid);
 
         switch(task[i]->state) {
         case TASK_RUNNING:
