@@ -1,34 +1,4 @@
-# OSDI 2020 - LAB 05 Thread and User Process
-
-## Author
-
-| Student ID | GitHub Account | Name | Email                      |
-| -----------| -------------- | ---- | -------------------------- |
-| 0856167    | Yunyung        | 許振揚| yungyung7654321@gmail.com  |
-
-### Introduction
-Multitasking is the most important feature of an operating system. In this lab, we’ll learn how to create threads and how to switch between different threads to achieve multitasking. Moreover, we’ll learn how a user program becomes a user process and accesses services provided by the kernel through system calls.
-
-### Goals of this lab
-- Understand how to create threads and user processes.
-
-- Implement create theads and user processes.
-
-- Implement syscall such as fork(), exec(), and so on.
-
-- Understand how to implement scheduler and context switch.
-
-- Implement round robin scheduler and context switch mechanism.
-
-- Understand what’s preemption.
-
-- Implement user and kernel preemption
-
-- Understand how to implement the waiting mechanism.
-
-- Implement the waiting machanism 
-
-- Understand what's POSIX signals and mechanism.
+# OSDI 2023
 
 ## Directory structure
 ```
